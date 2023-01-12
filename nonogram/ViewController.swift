@@ -149,6 +149,11 @@ class FiveXFive: CellView {
     var i: Int = 0
     var j: Int = 0
 
+    override func setNeedsDisplay() {
+        super.setNeedsDisplay()
+        cv.setNeedsDisplay()
+    }
+
     override init(frame: CGRect) {
 
         super.init(frame: frame)
@@ -384,6 +389,11 @@ class NumbersView: CellView {
 
     private let cv = ContentView()
 
+    override func setNeedsDisplay() {
+        super.setNeedsDisplay()
+        cv.setNeedsDisplay()
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         cv.translatesAutoresizingMaskIntoConstraints = false
@@ -542,7 +552,24 @@ class MenuView: UIView {
     }
 
     @objc private func tapLayer() {
+        let popoverContentController = SelectColorViewController()
+        self.popoverContentController = popoverContentController
+        popoverContentController.colors = colors
+        popoverContentController.modalPresentationStyle = .popover
+        popoverContentController.didSelect = { [weak self] i in
+            self?.popoverContentController?.dismiss(animated: true)
+            self?.popoverContentController = nil
+            self?.delegate?.menuView(self!, didSelectPen: .layer(self!.colors[i]))
+        }
 
+        if let popoverPresentationController = popoverContentController.popoverPresentationController {
+            popoverPresentationController.permittedArrowDirections = .right
+            popoverPresentationController.sourceView = self
+            popoverPresentationController.sourceRect = layerB.frame
+
+            let presentingViewController = delegate?.menuViewPresentingViewController(self)
+            presentingViewController?.present(popoverContentController, animated: true, completion: nil)
+        }
     }
 }
 
@@ -584,6 +611,70 @@ class ViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, 
 
     func menuView(_: MenuView, didSelectPen pen: Pen) {
         self.pen = pen
+
+        if case .layer(let penColor) = pen {
+            sourceField = field
+            if layers[penColor.id] == nil {
+                layers[penColor.id] = Field(
+                    points: field.points.map({ line in
+                        var line = line
+                        for (i, point) in line.enumerated() {
+                            if case .color(let c) = point.value, c.id != penColor.id {
+                                line[i] = .init(value: .empty)
+                            }
+                        }
+                        return line
+                    }),
+                    horizintals: sourceField.horizintals.map({ element in
+                        return element.filter { def in
+                            def.color.id == penColor.id
+                        }
+                    }),
+                    verticals: sourceField.verticals.map({ element in
+                        return element.filter { def in
+                            def.color.id == penColor.id
+                        }
+                    })
+                )
+            }
+
+            field = layers[penColor.id]
+
+            for (i, line) in sourceField.points.enumerated() {
+                for (j, p) in line.enumerated() {
+                    if case .color(let c) = p.value, c.id == penColor.id {
+                        field.points[i][j] = p
+                    }
+                    if case .empty = p.value {
+                        field.points[i][j] = p
+                    }
+                }
+            }
+
+            layerColorId = penColor.id
+        }
+        if case .color = pen, layerColorId != nil {
+            layers[layerColorId!] = field
+            field = sourceField
+
+            for (i, line) in layers[layerColorId!]!.points.enumerated() {
+                for (j, p) in line.enumerated() {
+                    if case .color(let c) = p.value, c.id == layerColorId {
+                        field.points[i][j] = p
+                    }
+                }
+            }
+
+            layerColorId = nil
+        }
+
+        fiveXfives.forEach { element in
+            element.setNeedsDisplay()
+        }
+        horizontalsCell.numbers = field.horizintals
+        horizontalsCell.setNeedsDisplay()
+        verticalsCell.numbers = field.verticals
+        verticalsCell.setNeedsDisplay()
     }
 
     let scrollView = UIScrollView()
@@ -591,6 +682,14 @@ class ViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, 
     let menuView = MenuView()
 
     var field: Field!
+
+    var sourceField: Field!
+    var layers: [String: Field] = [:]
+    var layerColorId: String?
+
+    let horizontalsCell = NumbersView()
+    let verticalsCell = NumbersView()
+    var fiveXfives: [FiveXFive] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -837,7 +936,6 @@ class ViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, 
             leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
         ])
 
-        let horizontalsCell = NumbersView()
         horizontalsCell.cellAspectSize = cellAspectSize
         horizontalsCell.numbers = field.horizintals
         horizontalsCell.axis = .horizontal
@@ -850,7 +948,6 @@ class ViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, 
             horizontalsCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
         ])
 
-        let verticalsCell = NumbersView()
         verticalsCell.cellAspectSize = cellAspectSize
         verticalsCell.numbers = field.verticals
         verticalsCell.axis = .vertical
@@ -869,6 +966,8 @@ class ViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, 
                 fiveXfiveCell.i = i
                 fiveXfiveCell.j = j
                 contentView.contentView.addSubview(fiveXfiveCell)
+
+                fiveXfives.append(fiveXfiveCell)
 
                 fiveXfiveCell.delegate = self
 
