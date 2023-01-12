@@ -11,6 +11,8 @@ import UIKit
 protocol MenuViewDelegate: AnyObject {
     func menuViewPresentingViewController(_: MenuView) -> UIViewController
     func menuView(_: MenuView, didSelectPen: Pen)
+    func menuViewDidCloseLayer(_: MenuView)
+    func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color)
 }
 
 class MenuView: UIView {
@@ -20,6 +22,9 @@ class MenuView: UIView {
     private let empty = UIButton()
     private let color = UIButton()
     private let layerB = UIButton()
+    private let close = UIButton()
+    private let layerColor = UIButton()
+    private var selectedLayerColor: Field.Color!
 
     var pen: Pen = .empty {
         didSet {
@@ -44,10 +49,31 @@ class MenuView: UIView {
 
     var colors: [Field.Color] = []
 
+    func showCommon() {
+        stackView.arrangedSubviews.forEach({
+            $0.removeFromSuperview()
+        })
+        stackView.addArrangedSubview(empty)
+        stackView.addArrangedSubview(color)
+        stackView.addArrangedSubview(layerB)
+    }
+
+    func showLayer(color: Field.Color) {
+        stackView.arrangedSubviews.forEach({
+            $0.removeFromSuperview()
+        })
+        stackView.addArrangedSubview(empty)
+        stackView.addArrangedSubview(layerColor)
+        selectedLayerColor = color
+        layerColor.backgroundColor = color.c
+        stackView.addArrangedSubview(close)
+    }
+
+    private let stackView = UIStackView()
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
 
@@ -65,6 +91,14 @@ class MenuView: UIView {
         layerB.addTarget(self, action: #selector(tapLayer), for: .touchUpInside)
         layerB.setTitleColor(.black, for: .normal)
         stackView.addArrangedSubview(layerB)
+
+        layerColor.setTitle("", for: .normal)
+        layerColor.addTarget(self, action: #selector(tapLayerColor), for: .touchUpInside)
+        layerColor.setTitleColor(.black, for: .normal)
+
+        close.setTitle("X", for: .normal)
+        close.addTarget(self, action: #selector(tapClose), for: .touchUpInside)
+        close.setTitleColor(.black, for: .normal)
 
         addSubview(stackView)
 
@@ -123,6 +157,14 @@ class MenuView: UIView {
 
     @objc private func tapEmpty() {
         delegate?.menuView(self, didSelectPen: .empty)
+    }
+
+    @objc private func tapClose() {
+        delegate?.menuViewDidCloseLayer(self)
+    }
+
+    @objc private func tapLayerColor() {
+        delegate?.menuViewDidSelctColorForCurrentLayer(self, color: selectedLayerColor)
     }
 
     var popoverContentController: SelectColorViewController?

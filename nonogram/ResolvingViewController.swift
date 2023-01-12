@@ -16,6 +16,18 @@ enum Pen {
 
 class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, FiveXFiveDelegate {
 
+    func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color) {
+        pen = .layer(color)
+    }
+
+    func menuViewDidCloseLayer(_ mv: MenuView) {
+        if case .layer(let c) = pen {
+            update(with: .closeAndSelectPen(pen: .color(c)))
+        } else {
+            update(with: .closeAndSelectPen(pen: .empty))
+        }
+    }
+
     func fiveXFive(_ fiveXfive: FiveXFive, pointForI i: Int, J j: Int) -> Field.Point {
         if fiveXfive.i * 5 + i >= field.size.w || fiveXfive.j * 5 + j >= field.size.h {
             return .init(value: .none)
@@ -44,10 +56,17 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         return self
     }
 
-    func menuView(_: MenuView, didSelectPen pen: Pen) {
-        self.pen = pen
+    enum UpdateAction {
+        case selectLayer(penColor: Field.Color)
+        case selectPen(pen: Pen)
+        case closeAndSelectPen(pen: Pen)
+    }
 
-        if case .layer(let penColor) = pen {
+    func update(with action: UpdateAction) {
+
+        switch action {
+        case .selectLayer(let penColor):
+            self.pen = .layer(penColor)
             sourceField = field
             if layers[penColor.id] == nil {
                 layers[penColor.id] = Field(
@@ -87,8 +106,9 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             }
 
             layerColorId = penColor.id
-        }
-        if case .color = pen, layerColorId != nil {
+        case .closeAndSelectPen(let pen):
+            self.pen = pen
+
             layers[layerColorId!] = field
             field = sourceField
 
@@ -101,6 +121,8 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             }
 
             layerColorId = nil
+        case .selectPen(let pen):
+            self.pen = pen
         }
 
         fiveXfives.forEach { element in
@@ -110,6 +132,20 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         horizontalsCell.setNeedsDisplay()
         verticalsCell.numbers = field.verticals
         verticalsCell.setNeedsDisplay()
+
+        if layerColorId == nil {
+            menuView.showCommon()
+        } else {
+            menuView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
+        }
+    }
+
+    func menuView(_: MenuView, didSelectPen pen: Pen) {
+        if case .layer(let penColor) = pen {
+            update(with: .selectLayer(penColor: penColor))
+        } else {
+            update(with: .selectPen(pen: pen))
+        }
     }
 
     let scrollView = UIScrollView()
