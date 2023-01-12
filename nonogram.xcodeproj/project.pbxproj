@@ -18,6 +18,7 @@
 		A2C6591E2970635900FE29B7 /* CellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591D2970635900FE29B7 /* CellView.swift */; };
 		A2C659202970636900FE29B7 /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591F2970636900FE29B7 /* Field.swift */; };
 		A2C659222970642C00FE29B7 /* ResolvingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C659212970642C00FE29B7 /* ResolvingViewController.swift */; };
+		A2C6592529706A5200FE29B7 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = A2C6592429706A5200FE29B7 /* SwiftSoup */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A2C6592529706A5200FE29B7 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +100,9 @@
 			dependencies = (
 			);
 			name = nonogram;
+			packageProductDependencies = (
+				A2C6592429706A5200FE29B7 /* SwiftSoup */,
+			);
 			productName = nonogram;
 			productReference = A25E82FF296FFEEE00CAC48D /* nonogram.app */;
 			productType = "com.apple.product-type.application";
@@ -126,6 +131,9 @@
 				Base,
 			);
 			mainGroup = A25E82F6296FFEED00CAC48D;
+			packageReferences = (
+				A2C6592329706A5200FE29B7 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
 			productRefGroup = A25E8300296FFEEE00CAC48D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -376,6 +384,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A2C6592329706A5200FE29B7 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A2C6592429706A5200FE29B7 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A2C6592329706A5200FE29B7 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A25E82F7296FFEED00CAC48D /* Project object */;
 }

@@ -126,6 +126,22 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
     let verticalsCell = NumbersView()
     var fiveXfives: [FiveXFive] = []
 
+    var horizintals: [[Field.Definition]]
+    var verticals: [[Field.Definition]]
+
+    init(
+        horizintals: [[Field.Definition]],
+        verticals: [[Field.Definition]]
+    ) {
+        self.horizintals = horizintals
+        self.verticals = verticals
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -141,192 +157,11 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         field = Field(
             points: Array<[Field.Point]>(
-                repeating: Array<Field.Point>(repeating: .init(value: nil), count: 14),
-                count: 20
+                repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticals.count),
+                count: horizintals.count
             ),
-            horizintals: [
-                [
-                    .init(color: .init(c: .lightGray), n: 4),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .yellow), n: 4),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 2),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .black), n: 2),
-                ],
-
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .black), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 4),
-                    .init(color: .init(c: .black), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 5),
-                    .init(color: .init(c: .black), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .black), n: 2),
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .black), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .black), n: 2),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-
-                [
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 4),
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 2),
-                ],
-                [
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .lightGray), n: 4),
-                ],
-                [
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .yellow), n: 7),
-                ],
-            ],
-            verticals: [
-                [
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .black), n: 3),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .lightGray), n: 5),
-                    .init(color: .init(c: .lightGray), n: 2),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .yellow), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .yellow), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 3),
-                ],
-
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 7),
-                    .init(color: .init(c: .black), n: 2),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 2),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .yellow), n: 4),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 3),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .yellow), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 4),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 3),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-                [
-                    .init(color: .init(c: .black), n: 1),
-                    .init(color: .init(c: .lightGray), n: 3),
-                ],
-                [
-                    .init(color: .init(c: .lightGray), n: 1),
-                ],
-            ])
+            horizintals: horizintals,
+            verticals: verticals)
 
         let hMax = field.horizintals.reduce(0) { prev, current in
             if current.count > prev {
