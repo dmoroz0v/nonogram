@@ -8,8 +8,30 @@
 import UIKit
 import SwiftSoup
 
+extension String {
+    public func matching(_ pattern: String, options: NSRegularExpression.Options = []) -> [String] {
+        guard let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
+            return []
+        }
 
-class ViewController: UIViewController {
+        return regEx.matches(in: self, range: NSRange(location: 0, length: count)).map { match in
+            guard let range = Range(match.range) else {
+                return ""
+            }
+            let startIndex = index(self.startIndex, offsetBy: range.startIndex)
+            let endIndex = index(self.startIndex, offsetBy: range.endIndex)
+            return String(self[startIndex..<endIndex])
+        }
+    }
+}
+
+class ViewController: UIViewController, ResolvingViewControllerDelegate {
+
+    var storage: Storage = Storage()
+
+    func resolvingViewController(_: ResolvingViewController, didChangeState field: Field, layers: [String : Field], currentLayer: String?) {
+        storage.save(field: field, layers: layers, currentLayer: currentLayer)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,6 +56,7 @@ class ViewController: UIViewController {
                         }
                         if let div = (try td.select("div").first()), let n = Int(try div.text()) {
                             var style = try td.attr("style")
+                            style = style.matching("background-color.*?\\(.*?\\);").first!
                             style = style.replacingOccurrences(of: "background-color: rgb(", with: "")
                             style = style.replacingOccurrences(of: ");", with: "")
                             style = style.replacingOccurrences(of: ",", with: "")
@@ -54,6 +77,7 @@ class ViewController: UIViewController {
                     for td in tds {
                         if let div = (try td.select("div").first()), let n = Int(try div.text()) {
                             var style = try td.attr("style")
+                            style = style.matching("background-color.+?\\(.+?\\);").first!
                             style = style.replacingOccurrences(of: "background-color: rgb(", with: "")
                             style = style.replacingOccurrences(of: ");", with: "")
                             style = style.replacingOccurrences(of: ",", with: "")
@@ -67,10 +91,20 @@ class ViewController: UIViewController {
                 }
             }
 
-            let resolvingViewController = ResolvingViewController(
-                horizintals: horizontal,
-                verticals: verticals
-            )
+            let resolvingViewController: ResolvingViewController
+            if let data = storage.load() {
+                resolvingViewController = ResolvingViewController(
+                    field: data.field,
+                    layers: data.layers,
+                    currentLayer: data.currentLayer
+                )
+            } else {
+                resolvingViewController = ResolvingViewController(
+                    horizintals: horizontal,
+                    verticals: verticals
+                )
+            }
+            resolvingViewController.delegate = self
             addChild(resolvingViewController)
             view.addSubview(resolvingViewController.view)
             resolvingViewController.didMove(toParent: self)

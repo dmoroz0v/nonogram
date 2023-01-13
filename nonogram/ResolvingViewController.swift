@@ -14,7 +14,13 @@ enum Pen {
     case layer(Field.Color)
 }
 
+protocol ResolvingViewControllerDelegate: AnyObject {
+    func resolvingViewController(_: ResolvingViewController, didChangeState: Field, layers: [String: Field], currentLayer: String?)
+}
+
 class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, FiveXFiveDelegate {
+
+    weak var delegate: ResolvingViewControllerDelegate?
 
     func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color) {
         pen = .layer(color)
@@ -52,6 +58,12 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         } else {
             field.points[row][column] = newValue
         }
+
+        if let layerId = layerColorId {
+            layers[layerId] = field
+        }
+
+        delegate?.resolvingViewController(self, didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId)
     }
 
     var pen: Pen = .empty {
@@ -123,6 +135,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
             layers[layerColorId!] = field
             field = sourceField
+            sourceField = nil
 
             for (i, line) in layers[layerColorId!]!.points.enumerated() {
                 for (j, p) in line.enumerated() {
@@ -137,6 +150,12 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             self.pen = pen
         }
 
+        applyState()
+
+        delegate?.resolvingViewController(self, didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId)
+    }
+
+    func applyState() {
         fiveXfives.forEach { element in
             element.setNeedsDisplay()
         }
@@ -185,6 +204,23 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         self.verticals = verticals
         super.init(nibName: nil, bundle: nil)
     }
+
+    init(
+        field: Field,
+        layers: [String: Field],
+        currentLayer: String?
+    ) {
+        self.horizintals = field.horizintals
+        self.verticals = field.verticals
+        self.field = field
+        self.layers = layers
+        self.layerColorId = currentLayer
+        if let currentLayer = currentLayer {
+            self.sourceField = field
+            self.field = layers[currentLayer]
+        }
+        super.init(nibName: nil, bundle: nil)
+    }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -203,13 +239,17 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         scrollView.addSubview(contentView)
         scrollView.contentInset = .init(top: 60, left: 40, bottom: 60, right: 40)
 
-        field = Field(
-            points: Array<[Field.Point]>(
-                repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticals.count),
-                count: horizintals.count
-            ),
-            horizintals: horizintals,
-            verticals: verticals)
+        if field == nil {
+            field = Field(
+                points: Array<[Field.Point]>(
+                    repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticals.count),
+                    count: horizintals.count
+                ),
+                horizintals: horizintals,
+                verticals: verticals)
+        }
+
+        let field: Field! = (sourceField ?? field)
 
         let hMax = field.horizintals.reduce(0) { prev, current in
             if current.count > prev {
@@ -319,6 +359,8 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             menuView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             menuView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
+
+        applyState()
     }
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
