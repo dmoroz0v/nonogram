@@ -19,6 +19,7 @@
 		A2C659202970636900FE29B7 /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591F2970636900FE29B7 /* Field.swift */; };
 		A2C659222970642C00FE29B7 /* ResolvingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C659212970642C00FE29B7 /* ResolvingViewController.swift */; };
 		A2C6592529706A5200FE29B7 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = A2C6592429706A5200FE29B7 /* SwiftSoup */; };
+		A2C659272971336D00FE29B7 /* NumbersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C659262971336D00FE29B7 /* NumbersView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		A2C6591D2970635900FE29B7 /* CellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellView.swift; sourceTree = "<group>"; };
 		A2C6591F2970636900FE29B7 /* Field.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Field.swift; sourceTree = "<group>"; };
 		A2C659212970642C00FE29B7 /* ResolvingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvingViewController.swift; sourceTree = "<group>"; };
+		A2C659262971336D00FE29B7 /* NumbersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumbersView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +82,7 @@
 				A2C6591D2970635900FE29B7 /* CellView.swift */,
 				A2C6591F2970636900FE29B7 /* Field.swift */,
 				A2C659212970642C00FE29B7 /* ResolvingViewController.swift */,
+				A2C659262971336D00FE29B7 /* NumbersView.swift */,
 			);
 			path = nonogram;
 			sourceTree = "<group>";
@@ -164,6 +167,7 @@
 				A2C659222970642C00FE29B7 /* ResolvingViewController.swift in Sources */,
 				A2C6591C2970633700FE29B7 /* MenuView.swift in Sources */,
 				A25E8307296FFEEE00CAC48D /* ViewController.swift in Sources */,
+				A2C659272971336D00FE29B7 /* NumbersView.swift in Sources */,
 				A2C6591E2970635900FE29B7 /* CellView.swift in Sources */,
 				A25E8303296FFEEE00CAC48D /* AppDelegate.swift in Sources */,
 				A2C6591A2970631600FE29B7 /* FiveXFive.swift in Sources */,

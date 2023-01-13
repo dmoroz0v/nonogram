@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 struct Field {
-    struct Color {
+    struct Color: Equatable {
         var c: UIColor
         var id: String
 
@@ -20,8 +20,8 @@ struct Field {
         }
     }
 
-    struct Point {
-        enum Value {
+    struct Point: Equatable {
+        enum Value: Equatable {
             case color(Color)
             case empty
         }

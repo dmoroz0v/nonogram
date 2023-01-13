@@ -36,13 +36,21 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
     }
 
     func fiveXFive(_ fiveXfive: FiveXFive, didTapI i: Int, J j: Int) {
+        let row = fiveXfive.j * 5 + j
+        let column = fiveXfive.i * 5 + i
+        var newValue: Field.Point
         switch pen {
         case .empty:
-            field.points[fiveXfive.j * 5 + j][fiveXfive.i * 5 + i] = .init(value: .empty)
+            newValue = .init(value: .empty)
         case .color(let c):
-            field.points[fiveXfive.j * 5 + j][fiveXfive.i * 5 + i] = .init(value: .color(c))
+            newValue = .init(value: .color(c))
         case .layer(let c):
-            field.points[fiveXfive.j * 5 + j][fiveXfive.i * 5 + i] = .init(value: .color(c))
+            newValue = .init(value: .color(c))
+        }
+        if newValue == field.points[row][column] {
+            field.points[row][column] = .init(value: nil)
+        } else {
+            field.points[row][column] = newValue
         }
     }
 
@@ -96,8 +104,12 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
             for (i, line) in sourceField.points.enumerated() {
                 for (j, p) in line.enumerated() {
-                    if case .color(let c) = p.value, c.id == penColor.id {
-                        field.points[i][j] = p
+                    if case .color(let c) = p.value {
+                        if c.id == penColor.id {
+                            field.points[i][j] = p
+                        } else {
+                            field.points[i][j] = .init(value: .empty)
+                        }
                     }
                     if case .empty = p.value {
                         field.points[i][j] = p
@@ -244,6 +256,12 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         horizontalsCell.cellAspectSize = cellAspectSize
         horizontalsCell.numbers = field.horizintals
+        horizontalsCell.offset = field.horizintals.reduce(0) { partialResult, line in
+            if line.count > partialResult {
+                return line.count
+            }
+            return partialResult
+        }
         horizontalsCell.axis = .horizontal
         horizontalsCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(horizontalsCell)
@@ -256,6 +274,12 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         verticalsCell.cellAspectSize = cellAspectSize
         verticalsCell.numbers = field.verticals
+        verticalsCell.offset = field.verticals.reduce(0) { partialResult, line in
+            if line.count > partialResult {
+                return line.count
+            }
+            return partialResult
+        }
         verticalsCell.axis = .vertical
         verticalsCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(verticalsCell)
