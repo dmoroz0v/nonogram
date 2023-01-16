@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import SwiftSoup
 
 extension String {
     public func matching(_ pattern: String, options: NSRegularExpression.Options = []) -> [String] {
