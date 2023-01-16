@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 
 protocol MenuViewDelegate: AnyObject {
+    func menuViewDidTapExit(_: MenuView)
     func menuViewPresentingViewController(_: MenuView) -> UIViewController
     func menuView(_: MenuView, didSelectPen: Pen)
     func menuViewDidCloseLayer(_: MenuView)
@@ -19,6 +20,7 @@ class MenuView: UIView {
 
     weak var delegate: MenuViewDelegate?
 
+    private let exit = UIButton()
     private let empty = UIButton()
     private let color = UIButton()
     private let layerB = UIButton()
@@ -53,6 +55,7 @@ class MenuView: UIView {
         stackView.arrangedSubviews.forEach({
             $0.removeFromSuperview()
         })
+        stackView.addArrangedSubview(exit)
         stackView.addArrangedSubview(empty)
         stackView.addArrangedSubview(color)
         stackView.addArrangedSubview(layerB)
@@ -62,6 +65,7 @@ class MenuView: UIView {
         stackView.arrangedSubviews.forEach({
             $0.removeFromSuperview()
         })
+        stackView.addArrangedSubview(exit)
         stackView.addArrangedSubview(empty)
         stackView.addArrangedSubview(layerColor)
         selectedLayerColor = color
@@ -76,6 +80,10 @@ class MenuView: UIView {
 
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
+
+        exit.setImage(UIImage(named: "exit"), for: .normal)
+        exit.addTarget(self, action: #selector(tapExit), for: .touchUpInside)
+        stackView.addArrangedSubview(exit)
 
         empty.setTitle("E", for: .normal)
         empty.setTitleColor(.black, for: .normal)
@@ -153,6 +161,10 @@ class MenuView: UIView {
             let i = ((view as! UIStackView).arrangedSubviews.firstIndex(where: { $0 === tapGR.view }))!
             didSelect?(i)
         }
+    }
+
+    @objc private func tapExit() {
+        delegate?.menuViewDidTapExit(self)
     }
 
     @objc private func tapEmpty() {

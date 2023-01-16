@@ -25,19 +25,13 @@ extension String {
     }
 }
 
-class ViewController: UIViewController, ResolvingViewControllerDelegate {
+class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuViewControllerDelegate {
 
-    var storage: Storage = Storage()
+    var currentViewController: UIViewController?
 
-    func resolvingViewController(_: ResolvingViewController, didChangeState field: Field, layers: [String : Field], currentLayer: String?) {
-        storage.save(field: field, layers: layers, currentLayer: currentLayer)
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
+    func menuViewController(_: MenuViewController, load url: URL) {
         do {
-            let data = try Data(contentsOf: URL(string: "https://www.nonograms.ru/nonograms2/i/61999")!)
+            let data = try Data(contentsOf: url)
 
             var d: [[Int]] = []
 
@@ -144,34 +138,78 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate {
                 verticals.append(verticalRow)
             }
 
-            let resolvingViewController: ResolvingViewController
-            if let data = storage.load() {
-                resolvingViewController = ResolvingViewController(
-                    field: data.field,
-                    layers: data.layers,
-                    currentLayer: data.currentLayer
-                )
-            } else {
-                resolvingViewController = ResolvingViewController(
-                    horizintals: horizontal,
-                    verticals: verticals
-                )
-            }
+            let resolvingViewController = ResolvingViewController(
+                horizintals: horizontal,
+                verticals: verticals
+            )
+
             resolvingViewController.delegate = self
-            addChild(resolvingViewController)
-            view.addSubview(resolvingViewController.view)
-            resolvingViewController.didMove(toParent: self)
 
-            NSLayoutConstraint.activate([
-                resolvingViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-                resolvingViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                resolvingViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                resolvingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            ])
-
+            showVC(resolvingViewController)
         }
         catch {
         }
+    }
+
+    func menuViewControllerContinue(_: MenuViewController) {
+        if let data = storage.load() {
+            let resolvingViewController = ResolvingViewController(
+                field: data.field,
+                layers: data.layers,
+                currentLayer: data.currentLayer
+            )
+
+            resolvingViewController.delegate = self
+            showVC(resolvingViewController)
+        }
+    }
+
+    var storage: Storage = Storage()
+
+    func resolvingViewController(
+        _: ResolvingViewController,
+        didChangeState field: Field,
+        layers: [String : Field],
+        currentLayer: String?
+    ) {
+        storage.save(field: field, layers: layers, currentLayer: currentLayer)
+    }
+
+    func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
+        let menuVC = MenuViewController()
+        menuVC.delegate = self
+
+        showVC(menuVC)
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let menuVC = MenuViewController()
+        menuVC.delegate = self
+
+        showVC(menuVC)
+    }
+
+    func showVC(_ vc: UIViewController) {
+        if let currentViewController = currentViewController {
+            currentViewController.willMove(toParent: nil)
+            currentViewController.view.removeFromSuperview()
+            currentViewController.removeFromParent()
+        }
+
+        currentViewController = vc
+
+        addChild(vc)
+        view.addSubview(vc.view)
+        vc.didMove(toParent: self)
+
+        NSLayoutConstraint.activate([
+            vc.view.topAnchor.constraint(equalTo: view.topAnchor),
+            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
     }
 
 }

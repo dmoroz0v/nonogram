@@ -16,11 +16,16 @@ enum Pen {
 
 protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewController(_: ResolvingViewController, didChangeState: Field, layers: [String: Field], currentLayer: String?)
+    func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
 class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, FiveXFiveDelegate {
 
     weak var delegate: ResolvingViewControllerDelegate?
+
+    func menuViewDidTapExit(_: MenuView) {
+        delegate?.resolvingViewControllerDidTapExit(self)
+    }
 
     func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color) {
         pen = .layer(color)

@@ -14,13 +14,35 @@ class Storage {
         let currentLayer: String?
     }
 
+    private var saving = false
+    private var pendingData: Data?
+
     func save(field: Field, layers: [String: Field], currentLayer: String?) {
         let data = Data(field: field, layers: layers, currentLayer: currentLayer)
-        let d = try? JSONEncoder().encode(data)
-        if let d = d {
-            let str = String(decoding: d, as: UTF8.self)
-            UserDefaults.standard.set(str, forKey: "Nonogram-Saved")
-            UserDefaults.standard.synchronize()
+        if saving {
+            self.pendingData = data
+            return
+        }
+        save(data)
+    }
+
+    private func save(_ data: Data) {
+        saving = true
+        DispatchQueue.global().async {
+
+            let d = try? JSONEncoder().encode(data)
+            if let d = d {
+                let str = String(decoding: d, as: UTF8.self)
+                UserDefaults.standard.set(str, forKey: "Nonogram-Saved")
+                UserDefaults.standard.synchronize()
+            }
+
+            DispatchQueue.main.async {
+                self.saving = false
+                if let data = self.pendingData {
+                    self.save(data)
+                }
+            }
         }
     }
 
