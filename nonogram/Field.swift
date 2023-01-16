@@ -14,10 +14,16 @@ struct Field: Codable {
         var id: String
 
         init(rgb: String) {
-            let rgb = rgb.split(separator: " ")
-            assert(rgb.count == 3)
-            c = UIColor(red: CGFloat(Int(rgb[0])!)/255, green: CGFloat(Int(rgb[1])!)/255, blue: CGFloat(Int(rgb[2])!)/255, alpha: 1)
-            id = rgb[0] + " " + rgb[1] + " " + rgb[2]
+            let scanner = Scanner(string: rgb)
+            var hexNumber: UInt64 = 0
+
+            scanner.scanHexInt64(&hexNumber)
+            let r = CGFloat((hexNumber & 0xff0000) >> 16) / 255
+            let g = CGFloat((hexNumber & 0x00ff00) >> 8) / 255
+            let b = CGFloat((hexNumber & 0x0000ff) >> 0) / 255
+
+            c = UIColor(red: r, green: g, blue: b, alpha: 1)
+            id = rgb
         }
 
         enum CodingKeys: String, CodingKey {
@@ -30,8 +36,17 @@ struct Field: Codable {
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             id = try container.decode(String.self, forKey: .color)
-            let rgb = id.split(separator: " ")
-            c = UIColor(red: CGFloat(Int(rgb[0])!)/255, green: CGFloat(Int(rgb[1])!)/255, blue: CGFloat(Int(rgb[2])!)/255, alpha: 1)
+//            let rgb = id.split(separator: " ")
+//            c = UIColor(red: CGFloat(Int(rgb[0])!)/255, green: CGFloat(Int(rgb[1])!)/255, blue: CGFloat(Int(rgb[2])!)/255, alpha: 1)
+            let scanner = Scanner(string: id)
+            var hexNumber: UInt64 = 0
+
+            scanner.scanHexInt64(&hexNumber)
+            let r = CGFloat((hexNumber & 0xff000000) >> 16) / 255
+            let g = CGFloat((hexNumber & 0x00ff0000) >> 8) / 255
+            let b = CGFloat((hexNumber & 0x0000ff00) >> 0) / 255
+
+            c = UIColor(red: r, green: g, blue: b, alpha: 1)
         }
     }
 
