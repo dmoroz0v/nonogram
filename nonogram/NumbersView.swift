@@ -54,9 +54,14 @@ class NumbersView: CellView {
             }
         }
 
+        var pickColorHandler: ((_ color: Field.Color) -> Void)?
+
         override init(frame: CGRect) {
             super.init(frame: frame)
             backgroundColor = .white
+
+            let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
+            addGestureRecognizer(tapGR)
         }
 
         required init?(coder: NSCoder) {
@@ -112,6 +117,32 @@ class NumbersView: CellView {
                     ))
                 }
             }
+        }
+
+        @objc private func tap(_ tapGR: UITapGestureRecognizer) {
+            let location = tapGR.location(in: self)
+            if axis == .horizontal {
+                let row = Int(location.y / cellAspectSize)
+                let column = Int(location.x / cellAspectSize) - (offset - numbers[row].count)
+                if column >= 0 {
+                    pickColorHandler?(numbers[row][column].color)
+                }
+            } else {
+                let row = Int(location.x / cellAspectSize)
+                let column = Int(location.y / cellAspectSize) - (offset - numbers[row].count)
+                if column >= 0 {
+                    pickColorHandler?(numbers[row][column].color)
+                }
+            }
+        }
+    }
+
+    var pickColorHandler: ((_ color: Field.Color) -> Void)? {
+        set {
+            cv.pickColorHandler = newValue
+        }
+        get {
+            cv.pickColorHandler
         }
     }
 

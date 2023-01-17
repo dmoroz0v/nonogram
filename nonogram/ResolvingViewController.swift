@@ -363,6 +363,9 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         ])
 
         horizontalsCell.cellAspectSize = cellAspectSize
+        horizontalsCell.pickColorHandler = { [weak self] color in
+            self?.update(with: .selectPen(pen: .color(color)))
+        }
         horizontalsCell.numbers = field.horizintals
         horizontalsCell.offset = field.horizintals.reduce(0) { partialResult, line in
             if line.count > partialResult {
@@ -381,6 +384,9 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         ])
 
         verticalsCell.cellAspectSize = cellAspectSize
+        verticalsCell.pickColorHandler = { [weak self] color in
+            self?.update(with: .selectPen(pen: .color(color)))
+        }
         verticalsCell.numbers = field.verticals
         verticalsCell.offset = field.verticals.reduce(0) { partialResult, line in
             if line.count > partialResult {

@@ -78,6 +78,8 @@ class MenuView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
+        backgroundColor = .white
+
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
 
