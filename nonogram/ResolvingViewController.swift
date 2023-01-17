@@ -69,8 +69,17 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             }
             if s > 0 {
                 let c = colors[s - 1]
-                if newValue != .init(value: .color(c)) {
-                    field.points[row][column] = .init(value: nil)
+                if layerColorId == nil {
+                    if newValue != .init(value: .color(c)) {
+                        field.points[row][column] = .init(value: nil)
+                    }
+                    if newValue == .init(value: .empty) {
+                        field.points[row][column] = .init(value: nil)
+                    }
+                } else {
+                    if layerColorId == c.id && newValue == .init(value: .empty) {
+                        field.points[row][column] = .init(value: nil)
+                    }
                 }
             }
         }
