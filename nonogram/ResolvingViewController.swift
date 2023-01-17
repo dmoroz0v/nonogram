@@ -86,9 +86,41 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         if let layerId = layerColorId {
             layers[layerId] = field
+        } else {
+            checkRownAndColumn(row: row, column: column)
         }
 
         delegate?.resolvingViewController(self, didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId)
+    }
+
+    func checkRownAndColumn(row: Int, column: Int) {
+        var rowIsResolved = true
+        solution[row].enumerated().forEach { i, s in
+            if field.points[row][i] == .init(value: nil) && s > 0 {
+                rowIsResolved = false
+            }
+        }
+        if rowIsResolved {
+            for i in 0..<field.points[row].count {
+                if field.points[row][i] == .init(value: nil) {
+                    field.points[row][i] = .init(value: .empty)
+                }
+            }
+        }
+
+        var columnIsResolver = true
+        for i in 0..<solution.count {
+            if field.points[i][column] == .init(value: nil) && solution[i][column] > 0 {
+                columnIsResolver = false
+            }
+        }
+        if columnIsResolver {
+            for i in 0..<solution.count {
+                if field.points[i][column] == .init(value: nil) {
+                    field.points[i][column] = .init(value: .empty)
+                }
+            }
+        }
     }
 
     var pen: Pen = .empty {
