@@ -139,7 +139,11 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuVie
 
             let resolvingViewController = ResolvingViewController(
                 horizintals: horizontal,
-                verticals: verticals
+                verticals: verticals,
+                solution: E,
+                colors: colors.map({
+                    Field.Color(rgb: $0)
+                })
             )
 
             resolvingViewController.delegate = self
@@ -155,7 +159,9 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuVie
             let resolvingViewController = ResolvingViewController(
                 field: data.field,
                 layers: data.layers,
-                currentLayer: data.currentLayer
+                currentLayer: data.currentLayer,
+                solution: data.solution,
+                colors: data.colors
             )
 
             resolvingViewController.delegate = self
@@ -166,12 +172,18 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuVie
     var storage: Storage = Storage()
 
     func resolvingViewController(
-        _: ResolvingViewController,
+        _ vc: ResolvingViewController,
         didChangeState field: Field,
         layers: [String : Field],
         currentLayer: String?
     ) {
-        storage.save(field: field, layers: layers, currentLayer: currentLayer)
+        storage.save(
+            field: field,
+            layers: layers,
+            currentLayer: currentLayer,
+            solution: vc.solution,
+            colors: vc.colors
+        )
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {

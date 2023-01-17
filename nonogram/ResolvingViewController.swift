@@ -62,6 +62,17 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             field.points[row][column] = .init(value: nil)
         } else {
             field.points[row][column] = newValue
+
+            let s = solution[row][column]
+            if s == 0 && newValue != .init(value: .empty) {
+                field.points[row][column] = .init(value: nil)
+            }
+            if s > 0 {
+                let c = colors[s - 1]
+                if newValue != .init(value: .color(c)) {
+                    field.points[row][column] = .init(value: nil)
+                }
+            }
         }
 
         if let layerId = layerColorId {
@@ -201,19 +212,28 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
     var horizintals: [[Field.Definition]]
     var verticals: [[Field.Definition]]
 
+    let solution: [[Int]]
+    let colors: [Field.Color]
+
     init(
         horizintals: [[Field.Definition]],
-        verticals: [[Field.Definition]]
+        verticals: [[Field.Definition]],
+        solution: [[Int]],
+        colors: [Field.Color]
     ) {
         self.horizintals = horizintals
         self.verticals = verticals
+        self.solution = solution
+        self.colors = colors
         super.init(nibName: nil, bundle: nil)
     }
 
     init(
         field: Field,
         layers: [String: Field],
-        currentLayer: String?
+        currentLayer: String?,
+        solution: [[Int]],
+        colors: [Field.Color]
     ) {
         self.horizintals = field.horizintals
         self.verticals = field.verticals
@@ -224,6 +244,8 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             self.sourceField = field
             self.field = layers[currentLayer]
         }
+        self.solution = solution
+        self.colors = colors
         super.init(nibName: nil, bundle: nil)
     }
     

@@ -12,13 +12,21 @@ class Storage {
         let field: Field
         let layers: [String: Field]
         let currentLayer: String?
+        let solution: [[Int]]
+        let colors: [Field.Color]
     }
 
     private var saving = false
     private var pendingData: Data?
 
-    func save(field: Field, layers: [String: Field], currentLayer: String?) {
-        let data = Data(field: field, layers: layers, currentLayer: currentLayer)
+    func save(field: Field, layers: [String: Field], currentLayer: String?, solution: [[Int]], colors: [Field.Color]) {
+        let data = Data(
+            field: field,
+            layers: layers,
+            currentLayer: currentLayer,
+            solution: solution,
+            colors: colors
+        )
         if saving {
             self.pendingData = data
             return
