@@ -74,7 +74,7 @@ class NumbersView: CellView {
             for (j, line) in numbers.enumerated() {
                 for (i, def) in line.reversed().enumerated() {
                     ctx.setFillColor(def.color.c.cgColor)
-                    let rectangle: CGRect
+                    var rectangle: CGRect
                     if axis == .horizontal {
                         rectangle = CGRect(
                             x: cellAspectSize * CGFloat(offset - i - 1),
@@ -104,17 +104,18 @@ class NumbersView: CellView {
 
                     let textColor = UIColor(white: white, alpha: alpha)
 
+                    rectangle.origin.y += 3
+                    let paragraphStyle = NSMutableParagraphStyle()
+                    paragraphStyle.alignment = .center
                     let font = UIFont.systemFont(ofSize: 12)
                     let string = NSAttributedString(
                         string: "\(def.n)",
                         attributes: [
+                            NSAttributedString.Key.paragraphStyle: paragraphStyle,
                             NSAttributedString.Key.font: font,
                             NSAttributedString.Key.foregroundColor: textColor
                         ])
-                    string.draw(at: CGPoint(
-                        x: rectangle.origin.x + 7,
-                        y: rectangle.origin.y + 3
-                    ))
+                    string.draw(in: rectangle)
                 }
             }
         }
