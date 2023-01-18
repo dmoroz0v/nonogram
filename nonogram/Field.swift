@@ -12,6 +12,7 @@ struct Field: Codable {
     struct Color: Codable, Equatable {
         var c: UIColor
         var id: String
+        var contrastColor: UIColor
 
         init(rgb: String) {
             let scanner = Scanner(string: rgb)
@@ -24,6 +25,18 @@ struct Field: Codable {
 
             c = UIColor(red: r, green: g, blue: b, alpha: 1)
             id = rgb
+
+            var white: CGFloat = 0
+            var alpha: CGFloat = 0
+            c.getWhite(&white, alpha: &alpha)
+
+            if white > 0.5 {
+                white = 0
+            } else {
+                white = 1
+            }
+
+            contrastColor = UIColor(white: white, alpha: alpha)
         }
 
         enum CodingKeys: String, CodingKey {
@@ -45,6 +58,18 @@ struct Field: Codable {
             let b = CGFloat((hexNumber & 0x0000ff) >> 0) / 255
 
             c = UIColor(red: r, green: g, blue: b, alpha: 1)
+
+            var white: CGFloat = 0
+            var alpha: CGFloat = 0
+            c.getWhite(&white, alpha: &alpha)
+
+            if white > 0.5 {
+                white = 0
+            } else {
+                white = 1
+            }
+
+            contrastColor = UIColor(white: white, alpha: alpha)
         }
     }
 

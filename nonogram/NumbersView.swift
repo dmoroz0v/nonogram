@@ -8,51 +8,35 @@
 import Foundation
 import UIKit
 
+protocol NumbersViewDelegate: AnyObject {
+    func numbersView(_: NumbersView, line: Int) -> [Field.Point]
+}
+
 class NumbersView: CellView {
+
+    weak var delegate: NumbersViewDelegate?
 
     var axis: NSLayoutConstraint.Axis = .horizontal {
         didSet {
-            cv.axis = axis
+            cv.setNeedsDisplay()
         }
     }
 
     var cellAspectSize: CGFloat = 1 {
         didSet {
-            cv.cellAspectSize = cellAspectSize
+            cv.setNeedsDisplay()
         }
     }
 
     var offset: Int = 0 {
         didSet {
-            cv.offset = offset
+            cv.setNeedsDisplay()
         }
     }
 
     private class ContentView: UIView {
 
-        var axis: NSLayoutConstraint.Axis = .horizontal {
-            didSet {
-                setNeedsDisplay()
-            }
-        }
-
-        var cellAspectSize: CGFloat = 1 {
-            didSet {
-                setNeedsDisplay()
-            }
-        }
-
-        var numbers: [[Field.Definition]] = [] {
-            didSet {
-                setNeedsDisplay()
-            }
-        }
-
-        var offset: Int = 0 {
-            didSet {
-                setNeedsDisplay()
-            }
-        }
+        unowned var numbersView: NumbersView!
 
         var pickColorHandler: ((_ color: Field.Color) -> Void)?
 
@@ -71,13 +55,14 @@ class NumbersView: CellView {
         override func draw(_ rect: CGRect) {
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
-            for (j, line) in numbers.enumerated() {
+            for (j, line) in numbersView.numbers.enumerated() {
                 for (i, def) in line.reversed().enumerated() {
                     ctx.setFillColor(def.color.c.cgColor)
+                    let cellAspectSize = numbersView.cellAspectSize
                     var rectangle: CGRect
-                    if axis == .horizontal {
+                    if numbersView.axis == .horizontal {
                         rectangle = CGRect(
-                            x: cellAspectSize * CGFloat(offset - i - 1),
+                            x: cellAspectSize * CGFloat(numbersView.offset - i - 1),
                             y: cellAspectSize * CGFloat(j),
                             width: cellAspectSize,
                             height: cellAspectSize
@@ -85,24 +70,14 @@ class NumbersView: CellView {
                     } else {
                         rectangle = CGRect(
                             x: cellAspectSize * CGFloat(j),
-                            y: cellAspectSize * CGFloat(offset - i - 1),
+                            y: cellAspectSize * CGFloat(numbersView.offset - i - 1),
                             width: cellAspectSize,
                             height: cellAspectSize
                         )
                     }
                     ctx.fill(rectangle)
 
-                    var white: CGFloat = 0
-                    var alpha: CGFloat = 0
-                    def.color.c.getWhite(&white, alpha: &alpha)
-
-                    if white > 0.5 {
-                        white = 0
-                    } else {
-                        white = 1
-                    }
-
-                    let textColor = UIColor(white: white, alpha: alpha)
+                    let textColor = def.color.contrastColor
 
                     rectangle.origin.y += 3
                     let paragraphStyle = NSMutableParagraphStyle()
@@ -117,12 +92,103 @@ class NumbersView: CellView {
                         ])
                     string.draw(in: rectangle)
                 }
+
+                if let line = numbersView.delegate?.numbersView(numbersView, line: j) {
+                    var defIndex = 0
+                    var n = 0
+                    for (pointIndex, point) in line.enumerated() {
+                        if point == .init(value: nil) {
+                            break
+                        }
+                        if point != .init(value: .empty) {
+                            n += 1
+                        }
+                        if n != 0 && (pointIndex + 1 == line.count || line[pointIndex + 1] != point) {
+                            let numbers = numbersView.numbers[j]
+                            let def = numbers[defIndex]
+                            if n == def.n {
+                                let cellAspectSize = numbersView.cellAspectSize
+
+                                var rectangle: CGRect
+                                if numbersView.axis == .horizontal {
+                                    rectangle = CGRect(
+                                        x: cellAspectSize * CGFloat(numbersView.offset - numbers.count + defIndex),
+                                        y: cellAspectSize * CGFloat(j),
+                                        width: cellAspectSize,
+                                        height: cellAspectSize
+                                    )
+                                } else {
+                                    rectangle = CGRect(
+                                        x: cellAspectSize * CGFloat(j),
+                                        y: cellAspectSize * CGFloat(numbersView.offset - numbers.count + defIndex),
+                                        width: cellAspectSize,
+                                        height: cellAspectSize
+                                    )
+                                }
+                                ctx.setStrokeColor(def.color.contrastColor.cgColor)
+                                ctx.setLineWidth(1)
+                                ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
+                                ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
+                                ctx.strokePath()
+
+                                n = 0
+                                defIndex += 1
+                            }
+                        }
+                    }
+
+                    defIndex = numbersView.numbers[j].count - 1
+                    n = 0
+                    for (pointIndex, point) in line.reversed().enumerated() {
+                        if point == .init(value: nil) {
+                            break
+                        }
+                        if point != .init(value: .empty) {
+                            n += 1
+                        }
+                        if n != 0 && (pointIndex == 0 || line[pointIndex - 1] != point) {
+                            let numbers = numbersView.numbers[j]
+                            let def = numbers[defIndex]
+                            if n == def.n {
+                                let cellAspectSize = numbersView.cellAspectSize
+
+                                var rectangle: CGRect
+                                if numbersView.axis == .horizontal {
+                                    rectangle = CGRect(
+                                        x: cellAspectSize * CGFloat(numbersView.offset - numbers.count + defIndex),
+                                        y: cellAspectSize * CGFloat(j),
+                                        width: cellAspectSize,
+                                        height: cellAspectSize
+                                    )
+                                } else {
+                                    rectangle = CGRect(
+                                        x: cellAspectSize * CGFloat(j),
+                                        y: cellAspectSize * CGFloat(numbersView.offset - numbers.count + defIndex),
+                                        width: cellAspectSize,
+                                        height: cellAspectSize
+                                    )
+                                }
+                                ctx.setStrokeColor(def.color.contrastColor.cgColor)
+                                ctx.setLineWidth(1)
+                                ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
+                                ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
+                                ctx.strokePath()
+
+                                n = 0
+                                defIndex -= 1
+                            }
+                        }
+                    }
+                }
             }
         }
 
         @objc private func tap(_ tapGR: UITapGestureRecognizer) {
             let location = tapGR.location(in: self)
-            if axis == .horizontal {
+            let cellAspectSize = numbersView.cellAspectSize
+            let numbers = numbersView.numbers
+            let offset = numbersView.offset
+            if numbersView.axis == .horizontal {
                 let row = Int(location.y / cellAspectSize)
                 let column = Int(location.x / cellAspectSize) - (offset - numbers[row].count)
                 if column >= 0 {
@@ -149,7 +215,7 @@ class NumbersView: CellView {
 
     var numbers: [[Field.Definition]] = [] {
         didSet {
-            cv.numbers = numbers
+            cv.setNeedsDisplay()
         }
     }
 
@@ -164,6 +230,8 @@ class NumbersView: CellView {
         super.init(frame: frame)
         cv.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(cv)
+
+        cv.numbersView = self
 
         NSLayoutConstraint.activate([
             contentView.topAnchor.constraint(equalTo: cv.topAnchor),

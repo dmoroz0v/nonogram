@@ -19,7 +19,20 @@ protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
-class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, FiveXFiveDelegate {
+class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, FiveXFiveDelegate, NumbersViewDelegate {
+
+    func numbersView(_ numbersView: NumbersView, line: Int) -> [Field.Point] {
+        if numbersView.axis == .horizontal {
+            return field.points[line]
+        } else {
+            var result: [Field.Point] = []
+            for i in 0..<field.points[0].count {
+                result.append(field.points[i][line])
+            }
+            return result
+        }
+    }
+
 
     weak var delegate: ResolvingViewControllerDelegate?
 
@@ -362,6 +375,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
         ])
 
+        horizontalsCell.delegate = self
         horizontalsCell.cellAspectSize = cellAspectSize
         horizontalsCell.pickColorHandler = { [weak self] color in
             self?.update(with: .selectPen(pen: .color(color)))
@@ -383,6 +397,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             horizontalsCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
         ])
 
+        verticalsCell.delegate = self
         verticalsCell.cellAspectSize = cellAspectSize
         verticalsCell.pickColorHandler = { [weak self] color in
             self?.update(with: .selectPen(pen: .color(color)))
