@@ -103,6 +103,8 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             checkRownAndColumn(row: row, column: column)
         }
 
+        applyState()
+
         delegate?.resolvingViewController(self, didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId)
     }
 
@@ -222,7 +224,10 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         applyState()
 
-        delegate?.resolvingViewController(self, didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId)
+        delegate?.resolvingViewController(
+            self,
+            didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId
+        )
     }
 
     func applyState() {
