@@ -26,7 +26,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             return field.points[line]
         } else {
             var result: [Field.Point] = []
-            for i in 0..<field.points[0].count {
+            for i in 0..<field.points.count {
                 result.append(field.points[i][line])
             }
             return result
