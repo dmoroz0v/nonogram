@@ -70,6 +70,10 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
     func fiveXFive(_ fiveXfive: FiveXFive, didTapI i: Int, J j: Int) {
         let row = fiveXfive.j * 5 + j
         let column = fiveXfive.i * 5 + i
+
+        horizontalsCell.focusedLine = row
+        verticalsCell.focusedLine = column
+
         var newValue: Field.Point
         switch pen {
         case .empty:
