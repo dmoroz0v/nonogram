@@ -139,7 +139,7 @@ class NumbersView: CellView {
 
                     defIndex = numbersView.numbers[j].count - 1
                     n = 0
-                    for (pointIndex, point) in line.reversed().enumerated() {
+                    for (pointIndex, point) in line.enumerated().reversed() {
                         if point == .init(value: nil) {
                             break
                         }
