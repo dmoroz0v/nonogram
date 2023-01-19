@@ -16,6 +16,12 @@ class NumbersView: CellView {
 
     weak var delegate: NumbersViewDelegate?
 
+    var focusedLine: Int = -1 {
+        didSet {
+            cv.setNeedsDisplay()
+        }
+    }
+
     var axis: NSLayoutConstraint.Axis = .horizontal {
         didSet {
             cv.setNeedsDisplay()
@@ -78,11 +84,19 @@ class NumbersView: CellView {
                     ctx.fill(rectangle)
 
                     let textColor = def.color.contrastColor
+                    
+                    if j == numbersView.focusedLine {
+                        var rectangle = rectangle
+                        rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                        ctx.setLineWidth(1)
+                        ctx.setStrokeColor(textColor.cgColor)
+                        ctx.stroke(rectangle)
+                    }
 
-                    rectangle.origin.y += 3
+                    rectangle.origin.y += 4
                     let paragraphStyle = NSMutableParagraphStyle()
                     paragraphStyle.alignment = .center
-                    let font = UIFont.systemFont(ofSize: 12)
+                    let font = UIFont.systemFont(ofSize: 14)
                     let string = NSAttributedString(
                         string: "\(def.n)",
                         attributes: [

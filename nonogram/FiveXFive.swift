@@ -10,6 +10,7 @@ import UIKit
 
 protocol FiveXFiveDelegate: AnyObject {
     func fiveXFive(_: FiveXFive, didTapI: Int, J: Int)
+    func fiveXFive(_: FiveXFive, didLongTapI: Int, J: Int)
     func fiveXFive(_: FiveXFive, pointForI: Int, J: Int) -> Field.Point
 }
 
@@ -115,7 +116,11 @@ class FiveXFive: CellView {
         }
     }
 
-    let cellAspectSize: CGFloat = 20
+    var cellAspectSize: CGFloat = 10 {
+        didSet {
+            cv.setNeedsLayout()
+        }
+    }
 
     private let cv = ContentView()
 
@@ -143,12 +148,19 @@ class FiveXFive: CellView {
         let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
         addGestureRecognizer(tapGR)
 
+        let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
+        addGestureRecognizer(longtapGR)
+
         cv.fiveXfive = self
     }
 
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
         delegate?.fiveXFive(self, didTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
-        cv.setNeedsDisplay()
+    }
+
+    @objc private func longtap(_ tapGR: UITapGestureRecognizer) {
+        let location = tapGR.location(in: self)
+        delegate?.fiveXFive(self, didLongTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
     }
 }

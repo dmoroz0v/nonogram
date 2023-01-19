@@ -59,6 +59,14 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         return field.points[fiveXfive.j * 5 + j][fiveXfive.i * 5 + i]
     }
 
+    func fiveXFive(_ fiveXfive: FiveXFive, didLongTapI i: Int, J j: Int) {
+        let row = fiveXfive.j * 5 + j
+        let column = fiveXfive.i * 5 + i
+
+        horizontalsCell.focusedLine = row
+        verticalsCell.focusedLine = column
+    }
+
     func fiveXFive(_ fiveXfive: FiveXFive, didTapI i: Int, J j: Int) {
         let row = fiveXfive.j * 5 + j
         let column = fiveXfive.i * 5 + i
@@ -351,7 +359,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             return prev
         }
 
-        let cellAspectSize: CGFloat = 20
+        let cellAspectSize: CGFloat = 24
 
         NSLayoutConstraint.activate([
             contentView.widthAnchor.constraint(equalToConstant: CGFloat(hMax + field.size.w) * cellAspectSize),
@@ -427,6 +435,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         for i in 0..<((field.size.w / 5) + 1) {
             for j in 0..<((field.size.h / 5) + 1) {
                 let fiveXfiveCell = FiveXFive()
+                fiveXfiveCell.cellAspectSize = cellAspectSize
                 fiveXfiveCell.i = i
                 fiveXfiveCell.j = j
                 contentView.contentView.addSubview(fiveXfiveCell)

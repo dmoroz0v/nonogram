@@ -63,7 +63,7 @@ struct Field: Codable {
             var alpha: CGFloat = 0
             c.getWhite(&white, alpha: &alpha)
 
-            if white > 0.5 {
+            if white > 0.65 {
                 white = 0
             } else {
                 white = 1
