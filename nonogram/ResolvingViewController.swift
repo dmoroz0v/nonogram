@@ -27,250 +27,12 @@ protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
-class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, SolutionViewDelegate, SolutionViewDataSource, NumbersViewDelegate {
+class ResolvingViewController: UIViewController {
 
     enum UpdateAction {
         case selectLayer(penColor: Field.Color)
         case selectPen(pen: Pen)
         case closeAndSelectPen(pen: Pen)
-    }
-
-    func numbersView(_ numbersView: NumbersView, defsForIndex index: Int) -> [Field.Point] {
-        if numbersView.axis == .horizontal {
-            let row = index
-            return field.points[row]
-        } else {
-            let column = index
-            var result: [Field.Point] = []
-            for rowIndex in 0..<field.size.rows {
-                result.append(field.points[rowIndex][column])
-            }
-            return result
-        }
-    }
-
-    func menuViewDidTapExit(_: MenuView) {
-        delegate?.resolvingViewControllerDidTapExit(self)
-    }
-
-    func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color) {
-        pen = .layer(color)
-    }
-
-    func menuViewDidCloseLayer(_ mv: MenuView) {
-        if case .layer(let c) = pen {
-            update(with: .closeAndSelectPen(pen: .color(c)))
-        } else {
-            update(with: .closeAndSelectPen(pen: .empty))
-        }
-    }
-
-    func solutionView(_ solutionView: SolutionView, pointForI i: Int, J j: Int) -> Field.Point {
-        return field.points[j][i]
-    }
-
-    func solutionView(_ solutionView: SolutionView, didLongTapI i: Int, J j: Int) {
-        let row = j
-        let column = i
-
-        horizontalDefsCell.focusedIndex = row
-        verticalDefsCell.focusedIndex = column
-    }
-
-    func solutionView(_ solutionView: SolutionView, didTapI i: Int, J j: Int) {
-        let row = j
-        let column = i
-
-        horizontalDefsCell.focusedIndex = row
-        verticalDefsCell.focusedIndex = column
-
-        var newValue: Field.Point
-        switch pen {
-        case .empty:
-            newValue = .init(value: .empty)
-        case .color(let c):
-            newValue = .init(value: .color(c))
-        case .layer(let c):
-            newValue = .init(value: .color(c))
-        }
-        if newValue == field.points[row][column] {
-            field.points[row][column] = .init(value: nil)
-        } else {
-            field.points[row][column] = newValue
-
-            let s = solution[row][column]
-            if s == 0 && newValue != .init(value: .empty) {
-                field.points[row][column] = .init(value: nil)
-            }
-            if s > 0 {
-                let c = colors[s - 1]
-                if layerColorId == nil {
-                    if newValue != .init(value: .color(c)) {
-                        field.points[row][column] = .init(value: nil)
-                    }
-                    if newValue == .init(value: .empty) {
-                        field.points[row][column] = .init(value: nil)
-                    }
-                } else {
-                    if layerColorId == c.id && newValue == .init(value: .empty) {
-                        field.points[row][column] = .init(value: nil)
-                    }
-                }
-            }
-        }
-
-        if let layerId = layerColorId {
-            layers[layerId] = field
-        } else {
-            checkRownAndColumn(row: row, column: column)
-        }
-
-        applyState()
-
-        delegate?.resolvingViewController(
-            self,
-            didChangeState: sourceField ?? field,
-            layers: layers,
-            currentLayer: layerColorId,
-            solution: solution,
-            colors: colors
-        )
-    }
-
-    func checkRownAndColumn(row: Int, column: Int) {
-        var rowIsResolved = true
-        solution[row].enumerated().forEach { column, value in
-            if field.points[row][column] == .init(value: nil) && value > 0 {
-                rowIsResolved = false
-            }
-        }
-        if rowIsResolved {
-            for columnIndex in 0..<field.points[row].count {
-                if field.points[row][columnIndex] == .init(value: nil) {
-                    field.points[row][columnIndex] = .init(value: .empty)
-                }
-            }
-        }
-
-        var columnIsResolver = true
-        for rowIndex in 0..<solution.count {
-            if field.points[rowIndex][column] == .init(value: nil) && solution[rowIndex][column] > 0 {
-                columnIsResolver = false
-            }
-        }
-        if columnIsResolver {
-            for rowIndex in 0..<solution.count {
-                if field.points[rowIndex][column] == .init(value: nil) {
-                    field.points[rowIndex][column] = .init(value: .empty)
-                }
-            }
-        }
-    }
-
-    func menuViewPresentingViewController(_: MenuView) -> UIViewController {
-        return self
-    }
-
-    func update(with action: UpdateAction) {
-
-        switch action {
-        case .selectLayer(let penColor):
-            self.pen = .layer(penColor)
-            sourceField = field
-            if layers[penColor.id] == nil {
-                layers[penColor.id] = Field(
-                    points: field.points.map({ line in
-                        var line = line
-                        for (i, point) in line.enumerated() {
-                            if case .color(let c) = point.value, c.id != penColor.id {
-                                line[i] = .init(value: .empty)
-                            }
-                        }
-                        return line
-                    }),
-                    horizintals: sourceField.horizintals.map({ element in
-                        return element.filter { def in
-                            def.color.id == penColor.id
-                        }
-                    }),
-                    verticals: sourceField.verticals.map({ element in
-                        return element.filter { def in
-                            def.color.id == penColor.id
-                        }
-                    })
-                )
-            }
-
-            field = layers[penColor.id]
-
-            for (i, line) in sourceField.points.enumerated() {
-                for (j, p) in line.enumerated() {
-                    if case .color(let c) = p.value {
-                        if c.id == penColor.id {
-                            field.points[i][j] = p
-                        } else {
-                            field.points[i][j] = .init(value: .empty)
-                        }
-                    }
-                    if case .empty = p.value {
-                        field.points[i][j] = p
-                    }
-                }
-            }
-
-            layerColorId = penColor.id
-        case .closeAndSelectPen(let pen):
-            self.pen = pen
-
-            layers[layerColorId!] = field
-            field = sourceField
-            sourceField = nil
-
-            for (i, line) in layers[layerColorId!]!.points.enumerated() {
-                for (j, p) in line.enumerated() {
-                    if case .color(let c) = p.value, c.id == layerColorId {
-                        field.points[i][j] = p
-                    }
-                }
-            }
-
-            layerColorId = nil
-        case .selectPen(let pen):
-            self.pen = pen
-        }
-
-        applyState()
-
-        delegate?.resolvingViewController(
-            self,
-            didChangeState: sourceField ?? field,
-            layers: layers,
-            currentLayer: layerColorId,
-            solution: solution,
-            colors: colors
-        )
-    }
-
-    func applyState() {
-        solutionView.setNeedsDisplay()
-        horizontalDefsCell.defs = field.horizintals
-        horizontalDefsCell.setNeedsDisplay()
-        verticalDefsCell.defs = field.verticals
-        verticalDefsCell.setNeedsDisplay()
-
-        if layerColorId == nil {
-            menuView.showCommon()
-        } else {
-            menuView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
-        }
-    }
-
-    func menuView(_: MenuView, didSelectPen pen: Pen) {
-        if case .layer(let penColor) = pen {
-            update(with: .selectLayer(penColor: penColor))
-        } else {
-            update(with: .selectPen(pen: pen))
-        }
     }
 
     weak var delegate: ResolvingViewControllerDelegate?
@@ -446,8 +208,254 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         applyState()
     }
 
+    func checkRownAndColumn(row: Int, column: Int) {
+        var rowIsResolved = true
+        solution[row].enumerated().forEach { column, value in
+            if field.points[row][column] == .init(value: nil) && value > 0 {
+                rowIsResolved = false
+            }
+        }
+        if rowIsResolved {
+            for columnIndex in 0..<field.points[row].count {
+                if field.points[row][columnIndex] == .init(value: nil) {
+                    field.points[row][columnIndex] = .init(value: .empty)
+                }
+            }
+        }
+
+        var columnIsResolver = true
+        for rowIndex in 0..<solution.count {
+            if field.points[rowIndex][column] == .init(value: nil) && solution[rowIndex][column] > 0 {
+                columnIsResolver = false
+            }
+        }
+        if columnIsResolver {
+            for rowIndex in 0..<solution.count {
+                if field.points[rowIndex][column] == .init(value: nil) {
+                    field.points[rowIndex][column] = .init(value: .empty)
+                }
+            }
+        }
+    }
+
+    func update(with action: UpdateAction) {
+
+        switch action {
+        case .selectLayer(let penColor):
+            self.pen = .layer(penColor)
+            sourceField = field
+            if layers[penColor.id] == nil {
+                layers[penColor.id] = Field(
+                    points: field.points.map({ line in
+                        var line = line
+                        for (i, point) in line.enumerated() {
+                            if case .color(let c) = point.value, c.id != penColor.id {
+                                line[i] = .init(value: .empty)
+                            }
+                        }
+                        return line
+                    }),
+                    horizintals: sourceField.horizintals.map({ element in
+                        return element.filter { def in
+                            def.color.id == penColor.id
+                        }
+                    }),
+                    verticals: sourceField.verticals.map({ element in
+                        return element.filter { def in
+                            def.color.id == penColor.id
+                        }
+                    })
+                )
+            }
+
+            field = layers[penColor.id]
+
+            for (i, line) in sourceField.points.enumerated() {
+                for (j, p) in line.enumerated() {
+                    if case .color(let c) = p.value {
+                        if c.id == penColor.id {
+                            field.points[i][j] = p
+                        } else {
+                            field.points[i][j] = .init(value: .empty)
+                        }
+                    }
+                    if case .empty = p.value {
+                        field.points[i][j] = p
+                    }
+                }
+            }
+
+            layerColorId = penColor.id
+        case .closeAndSelectPen(let pen):
+            self.pen = pen
+
+            layers[layerColorId!] = field
+            field = sourceField
+            sourceField = nil
+
+            for (i, line) in layers[layerColorId!]!.points.enumerated() {
+                for (j, p) in line.enumerated() {
+                    if case .color(let c) = p.value, c.id == layerColorId {
+                        field.points[i][j] = p
+                    }
+                }
+            }
+
+            layerColorId = nil
+        case .selectPen(let pen):
+            self.pen = pen
+        }
+
+        applyState()
+
+        delegate?.resolvingViewController(
+            self,
+            didChangeState: sourceField ?? field,
+            layers: layers,
+            currentLayer: layerColorId,
+            solution: solution,
+            colors: colors
+        )
+    }
+
+    func applyState() {
+        solutionView.setNeedsDisplay()
+        horizontalDefsCell.defs = field.horizintals
+        horizontalDefsCell.setNeedsDisplay()
+        verticalDefsCell.defs = field.verticals
+        verticalDefsCell.setNeedsDisplay()
+
+        if layerColorId == nil {
+            menuView.showCommon()
+        } else {
+            menuView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
+        }
+    }
+
+}
+
+extension ResolvingViewController: NumbersViewDelegate {
+    func numbersView(_ numbersView: NumbersView, defsForIndex index: Int) -> [Field.Point] {
+        if numbersView.axis == .horizontal {
+            let row = index
+            return field.points[row]
+        } else {
+            let column = index
+            var result: [Field.Point] = []
+            for rowIndex in 0..<field.size.rows {
+                result.append(field.points[rowIndex][column])
+            }
+            return result
+        }
+    }
+}
+
+extension ResolvingViewController: MenuViewDelegate {
+    func menuViewDidTapExit(_: MenuView) {
+        delegate?.resolvingViewControllerDidTapExit(self)
+    }
+
+    func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color) {
+        pen = .layer(color)
+    }
+
+    func menuViewDidCloseLayer(_ mv: MenuView) {
+        if case .layer(let c) = pen {
+            update(with: .closeAndSelectPen(pen: .color(c)))
+        } else {
+            update(with: .closeAndSelectPen(pen: .empty))
+        }
+    }
+
+    func menuViewPresentingViewController(_: MenuView) -> UIViewController {
+        return self
+    }
+
+    func menuView(_: MenuView, didSelectPen pen: Pen) {
+        if case .layer(let penColor) = pen {
+            update(with: .selectLayer(penColor: penColor))
+        } else {
+            update(with: .selectPen(pen: pen))
+        }
+    }
+}
+
+extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource {
+    func solutionView(_ solutionView: SolutionView, pointForI i: Int, J j: Int) -> Field.Point {
+        return field.points[j][i]
+    }
+
+    func solutionView(_ solutionView: SolutionView, didLongTapI i: Int, J j: Int) {
+        let row = j
+        let column = i
+
+        horizontalDefsCell.focusedIndex = row
+        verticalDefsCell.focusedIndex = column
+    }
+
+    func solutionView(_ solutionView: SolutionView, didTapI i: Int, J j: Int) {
+        let row = j
+        let column = i
+
+        horizontalDefsCell.focusedIndex = row
+        verticalDefsCell.focusedIndex = column
+
+        var newValue: Field.Point
+        switch pen {
+        case .empty:
+            newValue = .init(value: .empty)
+        case .color(let c):
+            newValue = .init(value: .color(c))
+        case .layer(let c):
+            newValue = .init(value: .color(c))
+        }
+        if newValue == field.points[row][column] {
+            field.points[row][column] = .init(value: nil)
+        } else {
+            field.points[row][column] = newValue
+
+            let s = solution[row][column]
+            if s == 0 && newValue != .init(value: .empty) {
+                field.points[row][column] = .init(value: nil)
+            }
+            if s > 0 {
+                let c = colors[s - 1]
+                if layerColorId == nil {
+                    if newValue != .init(value: .color(c)) {
+                        field.points[row][column] = .init(value: nil)
+                    }
+                    if newValue == .init(value: .empty) {
+                        field.points[row][column] = .init(value: nil)
+                    }
+                } else {
+                    if layerColorId == c.id && newValue == .init(value: .empty) {
+                        field.points[row][column] = .init(value: nil)
+                    }
+                }
+            }
+        }
+
+        if let layerId = layerColorId {
+            layers[layerId] = field
+        } else {
+            checkRownAndColumn(row: row, column: column)
+        }
+
+        applyState()
+
+        delegate?.resolvingViewController(
+            self,
+            didChangeState: sourceField ?? field,
+            layers: layers,
+            currentLayer: layerColorId,
+            solution: solution,
+            colors: colors
+        )
+    }
+}
+
+extension ResolvingViewController: UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return contentView
     }
-
 }
