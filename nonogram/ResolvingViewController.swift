@@ -448,7 +448,7 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
                 colors: colors
             )
         } else {
-            // show error
+            solutionView.showError(row: row, column: column)
         }
     }
 }

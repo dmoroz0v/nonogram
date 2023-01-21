@@ -86,6 +86,23 @@ class SolutionView: CellView {
                 }
             }
         }
+
+        func showError(row: Int, column: Int) {
+            let image = UIImage(named: "error")
+            let imageView = UIImageView(image: image)
+            imageView.frame.origin = CGPoint(
+                x: CGFloat(column) * solutionView.cellAspectSize,
+                y: CGFloat(row) * solutionView.cellAspectSize
+            )
+            addSubview(imageView)
+            imageView.transform = .init(scaleX: 0.8, y: 0.8)
+            UIView.animate(withDuration: 0.3, animations: {
+                imageView.transform = .init(scaleX: 1.2, y: 1.2)
+                imageView.alpha = 0
+            }, completion: { _ in
+                imageView.removeFromSuperview()
+            })
+        }
     }
 
     weak var delegate: SolutionViewDelegate?
@@ -189,6 +206,10 @@ class SolutionView: CellView {
                 height: bounds.height
             )
         }
+    }
+
+    func showError(row: Int, column: Int) {
+        cv.showError(row: row, column: column)
     }
 
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {
