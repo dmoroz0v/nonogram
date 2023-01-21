@@ -25,19 +25,40 @@ class SolutionView: CellView {
     private var horizontals: [UIView] = []
     private var verticals: [UIView] = []
 
-    let w: Int
-    let h: Int
+    var size: (columns: Int, rows: Int) = (columns: 1, rows: 1) {
+        didSet {
+            func createView(_ index: Int) -> UIView {
+                let v = UIView()
+                v.translatesAutoresizingMaskIntoConstraints = false
+                v.backgroundColor = ((index + 1) % 5 == 0) ? .black : .gray
+                contentView.addSubview(v)
+                return v
+            }
+
+            horizontals.forEach {
+                $0.removeFromSuperview()
+            }
+            horizontals = (0..<(size.rows - 1)).map { index -> UIView in
+                createView(index)
+            }
+
+            verticals.forEach {
+                $0.removeFromSuperview()
+            }
+            verticals = (0..<(size.columns - 1)).map { index -> UIView in
+                createView(index)
+            }
+
+            setNeedsDisplay()
+        }
+    }
 
     override func setNeedsDisplay() {
         super.setNeedsDisplay()
         cv.setNeedsDisplay()
     }
 
-    init(frame: CGRect, w: Int, h: Int) {
-
-        self.w = w
-        self.h = h
-
+    override init(frame: CGRect) {
         super.init(frame: frame)
 
         cv.translatesAutoresizingMaskIntoConstraints = false
@@ -49,22 +70,6 @@ class SolutionView: CellView {
             contentView.leadingAnchor.constraint(equalTo: cv.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: cv.trailingAnchor),
         ])
-
-        func createView(_ index: Int) -> UIView {
-            let v = UIView()
-            v.translatesAutoresizingMaskIntoConstraints = false
-            v.backgroundColor = ((index + 1) % 5 == 0) ? .black : .gray
-            contentView.addSubview(v)
-            return v
-        }
-
-        horizontals = (0..<(w-1)).map { index -> UIView in
-            createView(index)
-        }
-
-        verticals = (0..<(h-1)).map { index -> UIView in
-            createView(index)
-        }
 
         let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
         addGestureRecognizer(tapGR)
@@ -95,8 +100,8 @@ class SolutionView: CellView {
         override func draw(_ rect: CGRect) {
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
-            for i in 0..<solutionView.h {
-                for j in 0..<solutionView.w {
+            for i in 0..<solutionView.size.columns {
+                for j in 0..<solutionView.size.rows {
                     let point = solutionView.dataSource!.solutionView(solutionView, pointForI: i, J: j)
                     switch point.value {
                     case .color(let c):

@@ -15,11 +15,25 @@ enum Pen {
 }
 
 protocol ResolvingViewControllerDelegate: AnyObject {
-    func resolvingViewController(_: ResolvingViewController, didChangeState: Field, layers: [String: Field], currentLayer: String?)
+    func resolvingViewController(
+        _: ResolvingViewController,
+        didChangeState: Field,
+        layers: [String: Field],
+        currentLayer: String?,
+        solution: [[Int]],
+        colors: [Field.Color]
+    )
+
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
 class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, SolutionViewDelegate, SolutionViewDataSource, NumbersViewDelegate {
+
+    enum UpdateAction {
+        case selectLayer(penColor: Field.Color)
+        case selectPen(pen: Pen)
+        case closeAndSelectPen(pen: Pen)
+    }
 
     func numbersView(_ numbersView: NumbersView, line: Int) -> [Field.Point] {
         if numbersView.axis == .horizontal {
@@ -32,9 +46,6 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             return result
         }
     }
-
-
-    weak var delegate: ResolvingViewControllerDelegate?
 
     func menuViewDidTapExit(_: MenuView) {
         delegate?.resolvingViewControllerDidTapExit(self)
@@ -114,53 +125,48 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         applyState()
 
-        delegate?.resolvingViewController(self, didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId)
+        delegate?.resolvingViewController(
+            self,
+            didChangeState: sourceField ?? field,
+            layers: layers,
+            currentLayer: layerColorId,
+            solution: solution,
+            colors: colors
+        )
     }
 
     func checkRownAndColumn(row: Int, column: Int) {
         var rowIsResolved = true
-        solution[row].enumerated().forEach { i, s in
-            if field.points[row][i] == .init(value: nil) && s > 0 {
+        solution[row].enumerated().forEach { column, value in
+            if field.points[row][column] == .init(value: nil) && value > 0 {
                 rowIsResolved = false
             }
         }
         if rowIsResolved {
-            for i in 0..<field.points[row].count {
-                if field.points[row][i] == .init(value: nil) {
-                    field.points[row][i] = .init(value: .empty)
+            for columnIndex in 0..<field.points[row].count {
+                if field.points[row][columnIndex] == .init(value: nil) {
+                    field.points[row][columnIndex] = .init(value: .empty)
                 }
             }
         }
 
         var columnIsResolver = true
-        for i in 0..<solution.count {
-            if field.points[i][column] == .init(value: nil) && solution[i][column] > 0 {
+        for rowIndex in 0..<solution.count {
+            if field.points[rowIndex][column] == .init(value: nil) && solution[rowIndex][column] > 0 {
                 columnIsResolver = false
             }
         }
         if columnIsResolver {
-            for i in 0..<solution.count {
-                if field.points[i][column] == .init(value: nil) {
-                    field.points[i][column] = .init(value: .empty)
+            for rowIndex in 0..<solution.count {
+                if field.points[rowIndex][column] == .init(value: nil) {
+                    field.points[rowIndex][column] = .init(value: .empty)
                 }
             }
         }
     }
 
-    var pen: Pen = .empty {
-        didSet {
-            menuView.pen = pen
-        }
-    }
-
     func menuViewPresentingViewController(_: MenuView) -> UIViewController {
         return self
-    }
-
-    enum UpdateAction {
-        case selectLayer(penColor: Field.Color)
-        case selectPen(pen: Pen)
-        case closeAndSelectPen(pen: Pen)
     }
 
     func update(with action: UpdateAction) {
@@ -235,7 +241,11 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         delegate?.resolvingViewController(
             self,
-            didChangeState: sourceField ?? field, layers: layers, currentLayer: layerColorId
+            didChangeState: sourceField ?? field,
+            layers: layers,
+            currentLayer: layerColorId,
+            solution: solution,
+            colors: colors
         )
     }
 
@@ -261,34 +271,41 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         }
     }
 
-    let scrollView = UIScrollView()
-    let contentView = CellView()
-    let menuView = MenuView()
+    weak var delegate: ResolvingViewControllerDelegate?
 
-    var field: Field!
+    // views
+    private let scrollView = UIScrollView()
+    private let contentView = CellView()
+    private let menuView = MenuView()
+    private let horizontalsCell = NumbersView()
+    private let verticalsCell = NumbersView()
+    private let solutionView = SolutionView()
 
-    var sourceField: Field!
-    var layers: [String: Field] = [:]
-    var layerColorId: String?
+    // init state
+    private let horizontalDefs: [[Field.Definition]]
+    private let verticalDefs: [[Field.Definition]]
+    private let solution: [[Int]]
+    private let colors: [Field.Color]
 
-    let horizontalsCell = NumbersView()
-    let verticalsCell = NumbersView()
-    var solutionView: SolutionView!
-
-    var horizintals: [[Field.Definition]]
-    var verticals: [[Field.Definition]]
-
-    let solution: [[Int]]
-    let colors: [Field.Color]
+    // current state
+    private var field: Field!
+    private var sourceField: Field!
+    private var layers: [String: Field] = [:]
+    private var layerColorId: String?
+    private var pen: Pen = .empty {
+        didSet {
+            menuView.pen = pen
+        }
+    }
 
     init(
-        horizintals: [[Field.Definition]],
-        verticals: [[Field.Definition]],
+        horizontalDefs: [[Field.Definition]],
+        verticalDefs: [[Field.Definition]],
         solution: [[Int]],
         colors: [Field.Color]
     ) {
-        self.horizintals = horizintals
-        self.verticals = verticals
+        self.horizontalDefs = horizontalDefs
+        self.verticalDefs = verticalDefs
         self.solution = solution
         self.colors = colors
         super.init(nibName: nil, bundle: nil)
@@ -301,8 +318,8 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         solution: [[Int]],
         colors: [Field.Color]
     ) {
-        self.horizintals = field.horizintals
-        self.verticals = field.verticals
+        self.horizontalDefs = field.horizintals
+        self.verticalDefs = field.verticals
         self.field = field
         self.layers = layers
         self.layerColorId = currentLayer
@@ -335,11 +352,11 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         if field == nil {
             field = Field(
                 points: Array<[Field.Point]>(
-                    repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticals.count),
-                    count: horizintals.count
+                    repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticalDefs.count),
+                    count: horizontalDefs.count
                 ),
-                horizintals: horizintals,
-                verticals: verticals)
+                horizintals: horizontalDefs,
+                verticals: verticalDefs)
         }
 
         let field: Field! = (sourceField ?? field)
@@ -361,8 +378,8 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         let cellAspectSize: CGFloat = 24
 
         NSLayoutConstraint.activate([
-            contentView.widthAnchor.constraint(equalToConstant: CGFloat(hMax + field.size.w) * cellAspectSize),
-            contentView.heightAnchor.constraint(equalToConstant: CGFloat(vMax + field.size.h) * cellAspectSize),
+            contentView.widthAnchor.constraint(equalToConstant: CGFloat(hMax + field.size.columns) * cellAspectSize),
+            contentView.heightAnchor.constraint(equalToConstant: CGFloat(vMax + field.size.rows) * cellAspectSize),
         ])
 
         NSLayoutConstraint.activate([
@@ -387,7 +404,6 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
         ])
 
-        horizontalsCell.tag = 1
         horizontalsCell.delegate = self
         horizontalsCell.cellAspectSize = cellAspectSize
         horizontalsCell.pickColorHandler = { [weak self] color in
@@ -432,12 +448,11 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             verticalsCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
         ])
 
-        let solutionView = SolutionView(frame: .zero, w: field.horizintals.count, h: field.verticals.count)
         solutionView.translatesAutoresizingMaskIntoConstraints = false
+        solutionView.size = field.size
         solutionView.cellAspectSize = cellAspectSize
         solutionView.delegate = self
         solutionView.dataSource = self
-        self.solutionView = solutionView
         contentView.contentView.addSubview(solutionView)
 
         NSLayoutConstraint.activate([

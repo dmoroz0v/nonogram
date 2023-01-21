@@ -138,8 +138,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuVie
             }
 
             let resolvingViewController = ResolvingViewController(
-                horizintals: horizontal,
-                verticals: verticals,
+                horizontalDefs: horizontal,
+                verticalDefs: verticals,
                 solution: E,
                 colors: colors.map({
                     Field.Color(rgb: $0)
@@ -175,14 +175,16 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuVie
         _ vc: ResolvingViewController,
         didChangeState field: Field,
         layers: [String : Field],
-        currentLayer: String?
+        currentLayer: String?,
+        solution: [[Int]],
+        colors: [Field.Color]
     ) {
         storage.save(
             field: field,
             layers: layers,
             currentLayer: currentLayer,
-            solution: vc.solution,
-            colors: vc.colors
+            solution: solution,
+            colors: colors
         )
     }
 

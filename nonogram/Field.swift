@@ -15,53 +15,31 @@ struct Field: Codable {
         var contrastColor: UIColor
 
         init(rgb: String) {
-            let scanner = Scanner(string: rgb)
-            var hexNumber: UInt64 = 0
-
-            scanner.scanHexInt64(&hexNumber)
-            let r = CGFloat((hexNumber & 0xff0000) >> 16) / 255
-            let g = CGFloat((hexNumber & 0x00ff00) >> 8) / 255
-            let b = CGFloat((hexNumber & 0x0000ff) >> 0) / 255
-
-            c = UIColor(red: r, green: g, blue: b, alpha: 1)
             id = rgb
-
-            var white: CGFloat = 0
-            var alpha: CGFloat = 0
-            c.getWhite(&white, alpha: &alpha)
-
-            if white > 0.5 {
-                white = 0
-            } else {
-                white = 1
-            }
-
-            contrastColor = UIColor(white: white, alpha: alpha)
+            c = Color.color(hex: id)
+            contrastColor = Color.contrastColor(from: c)
         }
 
         enum CodingKeys: String, CodingKey {
             case color
         }
+
         func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(id, forKey: .color)
         }
+
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             id = try container.decode(String.self, forKey: .color)
-            let scanner = Scanner(string: id)
-            var hexNumber: UInt64 = 0
+            c = Color.color(hex: id)
+            contrastColor = Color.contrastColor(from: c)
+        }
 
-            scanner.scanHexInt64(&hexNumber)
-            let r = CGFloat((hexNumber & 0xff0000) >> 16) / 255
-            let g = CGFloat((hexNumber & 0x00ff00) >> 8) / 255
-            let b = CGFloat((hexNumber & 0x0000ff) >> 0) / 255
-
-            c = UIColor(red: r, green: g, blue: b, alpha: 1)
-
+        static func contrastColor(from color: UIColor) -> UIColor {
             var white: CGFloat = 0
             var alpha: CGFloat = 0
-            c.getWhite(&white, alpha: &alpha)
+            color.getWhite(&white, alpha: &alpha)
 
             if white > 0.65 {
                 white = 0
@@ -69,7 +47,19 @@ struct Field: Codable {
                 white = 1
             }
 
-            contrastColor = UIColor(white: white, alpha: alpha)
+            return UIColor(white: white, alpha: alpha)
+        }
+
+        static func color(hex: String) -> UIColor {
+            let scanner = Scanner(string: hex)
+            var hexNumber: UInt64 = 0
+
+            scanner.scanHexInt64(&hexNumber)
+            let r = CGFloat((hexNumber & 0xff0000) >> 16) / 255
+            let g = CGFloat((hexNumber & 0x00ff00) >> 8) / 255
+            let b = CGFloat((hexNumber & 0x0000ff) >> 0) / 255
+
+            return UIColor(red: r, green: g, blue: b, alpha: 1)
         }
     }
 
@@ -79,6 +69,9 @@ struct Field: Codable {
             case empty
         }
         var value: Value?
+
+        static let undefined = Point(value: nil)
+        static let empty = Point(value: .empty)
     }
 
     struct Definition: Codable {
@@ -90,8 +83,8 @@ struct Field: Codable {
 
     var horizintals: [[Definition]]
     var verticals: [[Definition]]
-    var size: (w: Int, h: Int) {
-        return (w: points[0].count, h: points.count)
+    var size: (columns: Int, rows: Int) {
+        return (columns: points[0].count, rows: points.count)
     }
 
     var colors: [Color] {
