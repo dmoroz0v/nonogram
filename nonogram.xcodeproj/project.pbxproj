@@ -14,7 +14,7 @@
 		A25E830C296FFEEE00CAC48D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A25E830B296FFEEE00CAC48D /* Assets.xcassets */; };
 		A25E830F296FFEEE00CAC48D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */; };
 		A28183642975A2DE00104A3E /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28183632975A2DE00104A3E /* MenuViewController.swift */; };
-		A2C6591A2970631600FE29B7 /* FiveXFive.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C659192970631600FE29B7 /* FiveXFive.swift */; };
+		A2B7FD37297C15FB00A682B9 /* SolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B7FD36297C15FB00A682B9 /* SolutionView.swift */; };
 		A2C6591C2970633700FE29B7 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591B2970633700FE29B7 /* MenuView.swift */; };
 		A2C6591E2970635900FE29B7 /* CellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591D2970635900FE29B7 /* CellView.swift */; };
 		A2C659202970636900FE29B7 /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591F2970636900FE29B7 /* Field.swift */; };
@@ -33,7 +33,7 @@
 		A25E830E296FFEEE00CAC48D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A25E8310296FFEEE00CAC48D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A28183632975A2DE00104A3E /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
-		A2C659192970631600FE29B7 /* FiveXFive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FiveXFive.swift; sourceTree = "<group>"; };
+		A2B7FD36297C15FB00A682B9 /* SolutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolutionView.swift; sourceTree = "<group>"; };
 		A2C6591B2970633700FE29B7 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
 		A2C6591D2970635900FE29B7 /* CellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellView.swift; sourceTree = "<group>"; };
 		A2C6591F2970636900FE29B7 /* Field.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Field.swift; sourceTree = "<group>"; };
@@ -79,7 +79,6 @@
 				A25E830B296FFEEE00CAC48D /* Assets.xcassets */,
 				A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */,
 				A25E8310296FFEEE00CAC48D /* Info.plist */,
-				A2C659192970631600FE29B7 /* FiveXFive.swift */,
 				A2C6591B2970633700FE29B7 /* MenuView.swift */,
 				A2C6591D2970635900FE29B7 /* CellView.swift */,
 				A2C6591F2970636900FE29B7 /* Field.swift */,
@@ -87,6 +86,7 @@
 				A2C659262971336D00FE29B7 /* NumbersView.swift */,
 				A2C65928297142DB00FE29B7 /* Storage.swift */,
 				A28183632975A2DE00104A3E /* MenuViewController.swift */,
+				A2B7FD36297C15FB00A682B9 /* SolutionView.swift */,
 			);
 			path = nonogram;
 			sourceTree = "<group>";
@@ -167,13 +167,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A2C659222970642C00FE29B7 /* ResolvingViewController.swift in Sources */,
+				A2B7FD37297C15FB00A682B9 /* SolutionView.swift in Sources */,
 				A2C6591C2970633700FE29B7 /* MenuView.swift in Sources */,
 				A25E8307296FFEEE00CAC48D /* ViewController.swift in Sources */,
 				A2C659272971336D00FE29B7 /* NumbersView.swift in Sources */,
 				A28183642975A2DE00104A3E /* MenuViewController.swift in Sources */,
 				A2C6591E2970635900FE29B7 /* CellView.swift in Sources */,
 				A25E8303296FFEEE00CAC48D /* AppDelegate.swift in Sources */,
-				A2C6591A2970631600FE29B7 /* FiveXFive.swift in Sources */,
 				A2C659202970636900FE29B7 /* Field.swift in Sources */,
 				A25E8305296FFEEE00CAC48D /* SceneDelegate.swift in Sources */,
 				A2C65929297142DB00FE29B7 /* Storage.swift in Sources */,

@@ -1,35 +1,42 @@
 //
-//  FiveXFive.swift
+//  SolutionView.swift
 //  nonogram
 //
-//  Created by Denis S. Morozov on 12.01.2023.
+//  Created by Denis S. Morozov on 21.01.2023.
 //
 
 import Foundation
 import UIKit
 
-protocol FiveXFiveDelegate: AnyObject {
-    func fiveXFive(_: FiveXFive, didTapI: Int, J: Int)
-    func fiveXFive(_: FiveXFive, didLongTapI: Int, J: Int)
-    func fiveXFive(_: FiveXFive, pointForI: Int, J: Int) -> Field.Point
+protocol SolutionViewDelegate: AnyObject {
+    func solutionView(_: SolutionView, didTapI: Int, J: Int)
+    func solutionView(_: SolutionView, didLongTapI: Int, J: Int)
 }
 
-class FiveXFive: CellView {
+protocol SolutionViewDataSource: AnyObject {
+    func solutionView(_: SolutionView, pointForI: Int, J: Int) -> Field.Point
+}
 
-    weak var delegate: FiveXFiveDelegate?
+class SolutionView: CellView {
+
+    weak var delegate: SolutionViewDelegate?
+    weak var dataSource: SolutionViewDataSource?
 
     private var horizontals: [UIView] = []
     private var verticals: [UIView] = []
 
-    var i: Int = 0
-    var j: Int = 0
+    let w: Int
+    let h: Int
 
     override func setNeedsDisplay() {
         super.setNeedsDisplay()
         cv.setNeedsDisplay()
     }
 
-    override init(frame: CGRect) {
+    init(frame: CGRect, w: Int, h: Int) {
+
+        self.w = w
+        self.h = h
 
         super.init(frame: frame)
 
@@ -43,27 +50,29 @@ class FiveXFive: CellView {
             contentView.trailingAnchor.constraint(equalTo: cv.trailingAnchor),
         ])
 
-        func createView() -> UIView {
+        func createView(_ index: Int) -> UIView {
             let v = UIView()
             v.translatesAutoresizingMaskIntoConstraints = false
-            v.backgroundColor = .black
+            v.backgroundColor = ((index + 1) % 5 == 0) ? .black : .gray
             contentView.addSubview(v)
             return v
         }
 
-        horizontals = [
-            createView(),
-            createView(),
-            createView(),
-            createView(),
-        ]
+        horizontals = (0..<(w-1)).map { index -> UIView in
+            createView(index)
+        }
 
-        verticals = [
-            createView(),
-            createView(),
-            createView(),
-            createView(),
-        ]
+        verticals = (0..<(h-1)).map { index -> UIView in
+            createView(index)
+        }
+
+        let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
+        addGestureRecognizer(tapGR)
+
+        let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
+        addGestureRecognizer(longtapGR)
+
+        cv.solutionView = self
     }
 
     required init?(coder: NSCoder) {
@@ -72,7 +81,7 @@ class FiveXFive: CellView {
 
     private class ContentView: UIView {
 
-        unowned var fiveXfive: FiveXFive!
+        unowned var solutionView: SolutionView!
 
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -86,24 +95,24 @@ class FiveXFive: CellView {
         override func draw(_ rect: CGRect) {
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
-            for i in 0..<5 {
-                for j in 0..<5 {
-                    let point = fiveXfive.delegate!.fiveXFive(fiveXfive, pointForI: i, J: j)
+            for i in 0..<solutionView.h {
+                for j in 0..<solutionView.w {
+                    let point = solutionView.dataSource!.solutionView(solutionView, pointForI: i, J: j)
                     switch point.value {
                     case .color(let c):
                         ctx.setFillColor(c.c.cgColor)
                         let rectangle: CGRect = CGRect(
-                            x: fiveXfive.cellAspectSize * CGFloat(i),
-                            y: fiveXfive.cellAspectSize * CGFloat(j),
-                            width: fiveXfive.cellAspectSize,
-                            height: fiveXfive.cellAspectSize
+                            x: solutionView.cellAspectSize * CGFloat(i),
+                            y: solutionView.cellAspectSize * CGFloat(j),
+                            width: solutionView.cellAspectSize,
+                            height: solutionView.cellAspectSize
                         )
                         ctx.fill(rectangle)
                     case .empty:
                         ctx.setFillColor(UIColor.black.cgColor)
                         let rectangle: CGRect = CGRect(
-                            x: fiveXfive.cellAspectSize * CGFloat(i) + fiveXfive.cellAspectSize/2 - 2,
-                            y: fiveXfive.cellAspectSize * CGFloat(j) + fiveXfive.cellAspectSize/2 - 2,
+                            x: solutionView.cellAspectSize * CGFloat(i) + solutionView.cellAspectSize/2 - 2,
+                            y: solutionView.cellAspectSize * CGFloat(j) + solutionView.cellAspectSize/2 - 2,
                             width: 4,
                             height: 4
                         )
@@ -128,39 +137,34 @@ class FiveXFive: CellView {
         super.layoutSubviews()
 
         horizontals.enumerated().forEach { i, v in
+            let lineWidth: CGFloat = ((i + 1) % 5 == 0) ? 2 : 1
+
             v.frame = CGRect(
                 x: 0,
-                y: CGFloat(i + 1) * (bounds.height / 5),
+                y: CGFloat(i + 1) * cellAspectSize,
                 width: bounds.width,
-                height: 1/UIScreen.main.scale
+                height: lineWidth / UIScreen.main.scale
             )
         }
 
         verticals.enumerated().forEach { i, v in
+            let lineWidth: CGFloat = ((i + 1) % 5 == 0) ? 2 : 1
             v.frame = CGRect(
-                x: CGFloat(i + 1) * (bounds.height / 5),
+                x: CGFloat(i + 1) * cellAspectSize,
                 y: 0,
-                width: 1/UIScreen.main.scale,
+                width: lineWidth / UIScreen.main.scale,
                 height: bounds.height
             )
         }
-
-        let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
-        addGestureRecognizer(tapGR)
-
-        let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
-        addGestureRecognizer(longtapGR)
-
-        cv.fiveXfive = self
     }
 
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
-        delegate?.fiveXFive(self, didTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
+        delegate?.solutionView(self, didTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
     }
 
     @objc private func longtap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
-        delegate?.fiveXFive(self, didLongTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
+        delegate?.solutionView(self, didLongTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
     }
 }

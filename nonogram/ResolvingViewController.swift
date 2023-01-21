@@ -19,7 +19,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
-class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, FiveXFiveDelegate, NumbersViewDelegate {
+class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewDelegate, SolutionViewDelegate, SolutionViewDataSource, NumbersViewDelegate {
 
     func numbersView(_ numbersView: NumbersView, line: Int) -> [Field.Point] {
         if numbersView.axis == .horizontal {
@@ -52,24 +52,21 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         }
     }
 
-    func fiveXFive(_ fiveXfive: FiveXFive, pointForI i: Int, J j: Int) -> Field.Point {
-        if fiveXfive.i * 5 + i >= field.size.w || fiveXfive.j * 5 + j >= field.size.h {
-            return .init(value: .none)
-        }
-        return field.points[fiveXfive.j * 5 + j][fiveXfive.i * 5 + i]
+    func solutionView(_ solutionView: SolutionView, pointForI i: Int, J j: Int) -> Field.Point {
+        return field.points[j][i]
     }
 
-    func fiveXFive(_ fiveXfive: FiveXFive, didLongTapI i: Int, J j: Int) {
-        let row = fiveXfive.j * 5 + j
-        let column = fiveXfive.i * 5 + i
+    func solutionView(_ solutionView: SolutionView, didLongTapI i: Int, J j: Int) {
+        let row = j
+        let column = i
 
         horizontalsCell.focusedLine = row
         verticalsCell.focusedLine = column
     }
 
-    func fiveXFive(_ fiveXfive: FiveXFive, didTapI i: Int, J j: Int) {
-        let row = fiveXfive.j * 5 + j
-        let column = fiveXfive.i * 5 + i
+    func solutionView(_ solutionView: SolutionView, didTapI i: Int, J j: Int) {
+        let row = j
+        let column = i
 
         horizontalsCell.focusedLine = row
         verticalsCell.focusedLine = column
@@ -243,9 +240,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
     }
 
     func applyState() {
-        fiveXfives.forEach { element in
-            element.setNeedsDisplay()
-        }
+        solutionView.setNeedsDisplay()
         horizontalsCell.numbers = field.horizintals
         horizontalsCell.setNeedsDisplay()
         verticalsCell.numbers = field.verticals
@@ -278,7 +273,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
     let horizontalsCell = NumbersView()
     let verticalsCell = NumbersView()
-    var fiveXfives: [FiveXFive] = []
+    var solutionView: SolutionView!
 
     var horizintals: [[Field.Definition]]
     var verticals: [[Field.Definition]]
@@ -392,6 +387,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
         ])
 
+        horizontalsCell.tag = 1
         horizontalsCell.delegate = self
         horizontalsCell.cellAspectSize = cellAspectSize
         horizontalsCell.pickColorHandler = { [weak self] color in
@@ -408,9 +404,9 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         horizontalsCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(horizontalsCell)
         NSLayoutConstraint.activate([
-            horizontalsCell.topAnchor.constraint(equalTo: contentView.topAnchor, constant: CGFloat(vMax) * cellAspectSize),
-            horizontalsCell.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            horizontalsCell.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            horizontalsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor, constant: CGFloat(vMax) * cellAspectSize),
+            horizontalsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
+            horizontalsCell.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
             horizontalsCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
         ])
 
@@ -430,32 +426,26 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         verticalsCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(verticalsCell)
         NSLayoutConstraint.activate([
-            verticalsCell.topAnchor.constraint(equalTo: contentView.topAnchor),
-            verticalsCell.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: CGFloat(hMax) * cellAspectSize),
-            verticalsCell.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            verticalsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
+            verticalsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor, constant: CGFloat(hMax) * cellAspectSize),
+            verticalsCell.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
             verticalsCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
         ])
 
-        for i in 0..<((field.size.w / 5) + 1) {
-            for j in 0..<((field.size.h / 5) + 1) {
-                let fiveXfiveCell = FiveXFive()
-                fiveXfiveCell.cellAspectSize = cellAspectSize
-                fiveXfiveCell.i = i
-                fiveXfiveCell.j = j
-                contentView.contentView.addSubview(fiveXfiveCell)
+        let solutionView = SolutionView(frame: .zero, w: field.horizintals.count, h: field.verticals.count)
+        solutionView.translatesAutoresizingMaskIntoConstraints = false
+        solutionView.cellAspectSize = cellAspectSize
+        solutionView.delegate = self
+        solutionView.dataSource = self
+        self.solutionView = solutionView
+        contentView.contentView.addSubview(solutionView)
 
-                fiveXfives.append(fiveXfiveCell)
-
-                fiveXfiveCell.delegate = self
-
-                fiveXfiveCell.frame = CGRect(
-                    x: CGFloat(hMax) * cellAspectSize + CGFloat(i * 5) * cellAspectSize,
-                    y: CGFloat(vMax) * cellAspectSize + CGFloat(j * 5) * cellAspectSize,
-                    width: CGFloat(5) * cellAspectSize,
-                    height: CGFloat(5) * cellAspectSize
-                )
-            }
-        }
+        NSLayoutConstraint.activate([
+            solutionView.topAnchor.constraint(equalTo: verticalsCell.bottomAnchor),
+            solutionView.leadingAnchor.constraint(equalTo: horizontalsCell.trailingAnchor),
+            solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
+            solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
+        ])
 
         menuView.colors = field.colors
         menuView.translatesAutoresizingMaskIntoConstraints = false
