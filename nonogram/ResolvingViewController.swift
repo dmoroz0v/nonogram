@@ -35,13 +35,15 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         case closeAndSelectPen(pen: Pen)
     }
 
-    func numbersView(_ numbersView: NumbersView, line: Int) -> [Field.Point] {
+    func numbersView(_ numbersView: NumbersView, defsForIndex index: Int) -> [Field.Point] {
         if numbersView.axis == .horizontal {
-            return field.points[line]
+            let row = index
+            return field.points[row]
         } else {
+            let column = index
             var result: [Field.Point] = []
-            for i in 0..<field.points.count {
-                result.append(field.points[i][line])
+            for rowIndex in 0..<field.size.rows {
+                result.append(field.points[rowIndex][column])
             }
             return result
         }
@@ -71,16 +73,16 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         let row = j
         let column = i
 
-        horizontalsCell.focusedLine = row
-        verticalsCell.focusedLine = column
+        horizontalDefsCell.focusedIndex = row
+        verticalDefsCell.focusedIndex = column
     }
 
     func solutionView(_ solutionView: SolutionView, didTapI i: Int, J j: Int) {
         let row = j
         let column = i
 
-        horizontalsCell.focusedLine = row
-        verticalsCell.focusedLine = column
+        horizontalDefsCell.focusedIndex = row
+        verticalDefsCell.focusedIndex = column
 
         var newValue: Field.Point
         switch pen {
@@ -251,10 +253,10 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
     func applyState() {
         solutionView.setNeedsDisplay()
-        horizontalsCell.numbers = field.horizintals
-        horizontalsCell.setNeedsDisplay()
-        verticalsCell.numbers = field.verticals
-        verticalsCell.setNeedsDisplay()
+        horizontalDefsCell.defs = field.horizintals
+        horizontalDefsCell.setNeedsDisplay()
+        verticalDefsCell.defs = field.verticals
+        verticalDefsCell.setNeedsDisplay()
 
         if layerColorId == nil {
             menuView.showCommon()
@@ -277,17 +279,12 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
     private let scrollView = UIScrollView()
     private let contentView = CellView()
     private let menuView = MenuView()
-    private let horizontalsCell = NumbersView()
-    private let verticalsCell = NumbersView()
+    private let horizontalDefsCell = NumbersView()
+    private let verticalDefsCell = NumbersView()
     private let solutionView = SolutionView()
 
-    // init state
-    private let horizontalDefs: [[Field.Definition]]
-    private let verticalDefs: [[Field.Definition]]
     private let solution: [[Int]]
     private let colors: [Field.Color]
-
-    // current state
     private var field: Field!
     private var sourceField: Field!
     private var layers: [String: Field] = [:]
@@ -304,8 +301,14 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         solution: [[Int]],
         colors: [Field.Color]
     ) {
-        self.horizontalDefs = horizontalDefs
-        self.verticalDefs = verticalDefs
+        field = Field(
+            points: Array<[Field.Point]>(
+                repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticalDefs.count),
+                count: horizontalDefs.count
+            ),
+            horizintals: horizontalDefs,
+            verticals: verticalDefs
+        )
         self.solution = solution
         self.colors = colors
         super.init(nibName: nil, bundle: nil)
@@ -318,8 +321,6 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         solution: [[Int]],
         colors: [Field.Color]
     ) {
-        self.horizontalDefs = field.horizintals
-        self.verticalDefs = field.verticals
         self.field = field
         self.layers = layers
         self.layerColorId = currentLayer
@@ -349,69 +350,47 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         scrollView.addSubview(contentView)
         scrollView.contentInset = .init(top: 60, left: 40, bottom: 60, right: 40)
 
-        if field == nil {
-            field = Field(
-                points: Array<[Field.Point]>(
-                    repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticalDefs.count),
-                    count: horizontalDefs.count
-                ),
-                horizintals: horizontalDefs,
-                verticals: verticalDefs)
-        }
-
         let field: Field! = (sourceField ?? field)
 
-        let hMax = field.horizintals.reduce(0) { prev, current in
-            if current.count > prev {
-                return current.count
-            }
-            return prev
-        }
-
-        let vMax = field.verticals.reduce(0) { prev, current in
-            if current.count > prev {
-                return current.count
-            }
-            return prev
-        }
-
         let cellAspectSize: CGFloat = 24
+        let maxHorizintalDefs = field.horizintals.reduce(0) { value, defs in
+            if defs.count > value {
+                return defs.count
+            }
+            return value
+        }
+        let maxVerticalDefs = field.verticals.reduce(0) { value, defs in
+            if defs.count > value {
+                return defs.count
+            }
+            return value
+        }
 
         let leftTopCell = CellView()
         leftTopCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(leftTopCell)
 
-        horizontalsCell.translatesAutoresizingMaskIntoConstraints = false
-        horizontalsCell.delegate = self
-        horizontalsCell.cellAspectSize = cellAspectSize
-        horizontalsCell.pickColorHandler = { [weak self] color in
+        horizontalDefsCell.translatesAutoresizingMaskIntoConstraints = false
+        horizontalDefsCell.delegate = self
+        horizontalDefsCell.cellAspectSize = cellAspectSize
+        horizontalDefsCell.pickColorHandler = { [weak self] color in
             self?.update(with: .selectPen(pen: .color(color)))
         }
-        horizontalsCell.numbers = field.horizintals
-        horizontalsCell.offset = field.horizintals.reduce(0) { partialResult, line in
-            if line.count > partialResult {
-                return line.count
-            }
-            return partialResult
-        }
-        horizontalsCell.axis = .horizontal
-        contentView.contentView.addSubview(horizontalsCell)
+        horizontalDefsCell.defs = field.horizintals
+        horizontalDefsCell.offset = maxHorizintalDefs
+        horizontalDefsCell.axis = .horizontal
+        contentView.contentView.addSubview(horizontalDefsCell)
 
-        verticalsCell.translatesAutoresizingMaskIntoConstraints = false
-        verticalsCell.delegate = self
-        verticalsCell.cellAspectSize = cellAspectSize
-        verticalsCell.pickColorHandler = { [weak self] color in
+        verticalDefsCell.translatesAutoresizingMaskIntoConstraints = false
+        verticalDefsCell.delegate = self
+        verticalDefsCell.cellAspectSize = cellAspectSize
+        verticalDefsCell.pickColorHandler = { [weak self] color in
             self?.update(with: .selectPen(pen: .color(color)))
         }
-        verticalsCell.numbers = field.verticals
-        verticalsCell.offset = field.verticals.reduce(0) { partialResult, line in
-            if line.count > partialResult {
-                return line.count
-            }
-            return partialResult
-        }
-        verticalsCell.axis = .vertical
-        contentView.contentView.addSubview(verticalsCell)
+        verticalDefsCell.defs = field.verticals
+        verticalDefsCell.offset = maxVerticalDefs
+        verticalDefsCell.axis = .vertical
+        contentView.contentView.addSubview(verticalDefsCell)
 
         solutionView.translatesAutoresizingMaskIntoConstraints = false
         solutionView.size = field.size
@@ -435,26 +414,28 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.widthAnchor.constraint(equalToConstant: CGFloat(hMax + field.size.columns) * cellAspectSize),
-            contentView.heightAnchor.constraint(equalToConstant: CGFloat(vMax + field.size.rows) * cellAspectSize),
+            contentView.widthAnchor.constraint(
+                equalToConstant: CGFloat(maxHorizintalDefs + field.size.columns) * cellAspectSize),
+            contentView.heightAnchor.constraint(
+                equalToConstant: CGFloat(maxVerticalDefs + field.size.rows) * cellAspectSize),
 
             leftTopCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
             leftTopCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
-            leftTopCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
-            leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
+            leftTopCell.widthAnchor.constraint(equalToConstant: CGFloat(maxHorizintalDefs) * cellAspectSize),
+            leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(maxVerticalDefs) * cellAspectSize),
 
-            horizontalsCell.topAnchor.constraint(equalTo: leftTopCell.bottomAnchor),
-            horizontalsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
-            horizontalsCell.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
-            horizontalsCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
+            horizontalDefsCell.topAnchor.constraint(equalTo: leftTopCell.bottomAnchor),
+            horizontalDefsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
+            horizontalDefsCell.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
+            horizontalDefsCell.widthAnchor.constraint(equalToConstant: CGFloat(maxHorizintalDefs) * cellAspectSize),
 
-            verticalsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
-            verticalsCell.leadingAnchor.constraint(equalTo: leftTopCell.trailingAnchor),
-            verticalsCell.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
-            verticalsCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
+            verticalDefsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
+            verticalDefsCell.leadingAnchor.constraint(equalTo: leftTopCell.trailingAnchor),
+            verticalDefsCell.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
+            verticalDefsCell.heightAnchor.constraint(equalToConstant: CGFloat(maxVerticalDefs) * cellAspectSize),
 
-            solutionView.topAnchor.constraint(equalTo: verticalsCell.bottomAnchor),
-            solutionView.leadingAnchor.constraint(equalTo: horizontalsCell.trailingAnchor),
+            solutionView.topAnchor.constraint(equalTo: verticalDefsCell.bottomAnchor),
+            solutionView.leadingAnchor.constraint(equalTo: horizontalDefsCell.trailingAnchor),
             solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
             solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
 
