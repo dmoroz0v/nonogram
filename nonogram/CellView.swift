@@ -23,7 +23,15 @@ class CellView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
+        contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
+
+        NSLayoutConstraint.activate([
+            contentView.topAnchor.constraint(equalTo: topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
+        ])
 
         updateBorders()
     }
@@ -34,8 +42,6 @@ class CellView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-
-        contentView.frame = bounds
 
         borderViews[0].frame = CGRect(x: 0, y: 0, width: 1/UIScreen.main.scale, height: bounds.height)
         borderViews[1].frame = CGRect(

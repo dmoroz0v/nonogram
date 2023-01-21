@@ -377,33 +377,11 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
 
         let cellAspectSize: CGFloat = 24
 
-        NSLayoutConstraint.activate([
-            contentView.widthAnchor.constraint(equalToConstant: CGFloat(hMax + field.size.columns) * cellAspectSize),
-            contentView.heightAnchor.constraint(equalToConstant: CGFloat(vMax + field.size.rows) * cellAspectSize),
-        ])
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-
-            scrollView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-        ])
-
         let leftTopCell = CellView()
         leftTopCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(leftTopCell)
-        NSLayoutConstraint.activate([
-            leftTopCell.topAnchor.constraint(equalTo: contentView.topAnchor),
-            leftTopCell.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            leftTopCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
-            leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
-        ])
 
+        horizontalsCell.translatesAutoresizingMaskIntoConstraints = false
         horizontalsCell.delegate = self
         horizontalsCell.cellAspectSize = cellAspectSize
         horizontalsCell.pickColorHandler = { [weak self] color in
@@ -417,15 +395,9 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             return partialResult
         }
         horizontalsCell.axis = .horizontal
-        horizontalsCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(horizontalsCell)
-        NSLayoutConstraint.activate([
-            horizontalsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor, constant: CGFloat(vMax) * cellAspectSize),
-            horizontalsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
-            horizontalsCell.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
-            horizontalsCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
-        ])
 
+        verticalsCell.translatesAutoresizingMaskIntoConstraints = false
         verticalsCell.delegate = self
         verticalsCell.cellAspectSize = cellAspectSize
         verticalsCell.pickColorHandler = { [weak self] color in
@@ -439,14 +411,7 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
             return partialResult
         }
         verticalsCell.axis = .vertical
-        verticalsCell.translatesAutoresizingMaskIntoConstraints = false
         contentView.contentView.addSubview(verticalsCell)
-        NSLayoutConstraint.activate([
-            verticalsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
-            verticalsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor, constant: CGFloat(hMax) * cellAspectSize),
-            verticalsCell.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
-            verticalsCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
-        ])
 
         solutionView.translatesAutoresizingMaskIntoConstraints = false
         solutionView.size = field.size
@@ -455,19 +420,44 @@ class ResolvingViewController: UIViewController, UIScrollViewDelegate, MenuViewD
         solutionView.dataSource = self
         contentView.contentView.addSubview(solutionView)
 
-        NSLayoutConstraint.activate([
-            solutionView.topAnchor.constraint(equalTo: verticalsCell.bottomAnchor),
-            solutionView.leadingAnchor.constraint(equalTo: horizontalsCell.trailingAnchor),
-            solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
-            solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
-        ])
-
-        menuView.colors = field.colors
         menuView.translatesAutoresizingMaskIntoConstraints = false
+        menuView.colors = field.colors
         menuView.delegate = self
         view.addSubview(menuView)
 
         NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.widthAnchor.constraint(equalToConstant: CGFloat(hMax + field.size.columns) * cellAspectSize),
+            contentView.heightAnchor.constraint(equalToConstant: CGFloat(vMax + field.size.rows) * cellAspectSize),
+
+            leftTopCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
+            leftTopCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
+            leftTopCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
+            leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
+
+            horizontalsCell.topAnchor.constraint(equalTo: leftTopCell.bottomAnchor),
+            horizontalsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
+            horizontalsCell.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
+            horizontalsCell.widthAnchor.constraint(equalToConstant: CGFloat(hMax) * cellAspectSize),
+
+            verticalsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
+            verticalsCell.leadingAnchor.constraint(equalTo: leftTopCell.trailingAnchor),
+            verticalsCell.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
+            verticalsCell.heightAnchor.constraint(equalToConstant: CGFloat(vMax) * cellAspectSize),
+
+            solutionView.topAnchor.constraint(equalTo: verticalsCell.bottomAnchor),
+            solutionView.leadingAnchor.constraint(equalTo: horizontalsCell.trailingAnchor),
+            solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
+            solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
+
             menuView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             menuView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
