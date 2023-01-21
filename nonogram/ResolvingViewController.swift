@@ -391,8 +391,9 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
     }
 
     func solutionView(_ solutionView: SolutionView, didTapColumn column: Int, row: Int) {
-        horizontalDefsCell.focusedIndex = row
-        verticalDefsCell.focusedIndex = column
+        if field.points[row][column] != .undefined {
+            return
+        }
 
         var newValue: Field.Point
         switch pen {
@@ -403,48 +404,50 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
         case .layer(let c):
             newValue = .init(value: .color(c))
         }
-        if newValue == field.points[row][column] {
-            field.points[row][column] = .undefined
+
+        var validValue: Field.Point
+
+        let s = solution[row][column]
+        if s == 0 {
+            validValue = .empty
         } else {
+            let color = colors[s - 1]
+            if layerColorId != nil {
+                if layerColorId == color.id {
+                    validValue = .init(value: .color(color))
+                } else {
+                    validValue = .empty
+                }
+            } else {
+                validValue = .init(value: .color(color))
+            }
+        }
+
+        if validValue == newValue {
             field.points[row][column] = newValue
 
-            let s = solution[row][column]
-            if s == 0 && newValue != .empty {
-                field.points[row][column] = .undefined
-            }
-            if s > 0 {
-                let c = colors[s - 1]
-                if layerColorId == nil {
-                    if newValue != .init(value: .color(c)) {
-                        field.points[row][column] = .undefined
-                    }
-                    if newValue == .empty {
-                        field.points[row][column] = .undefined
-                    }
-                } else {
-                    if layerColorId == c.id && newValue == .empty {
-                        field.points[row][column] = .undefined
-                    }
-                }
-            }
-        }
+            horizontalDefsCell.focusedIndex = row
+            verticalDefsCell.focusedIndex = column
 
-        if let layerId = layerColorId {
-            layers[layerId] = field
+            if let layerId = layerColorId {
+                layers[layerId] = field
+            } else {
+                checkRownAndColumn(row: row, column: column)
+            }
+
+            applyState()
+
+            delegate?.resolvingViewController(
+                self,
+                didChangeState: sourceField ?? field,
+                layers: layers,
+                currentLayer: layerColorId,
+                solution: solution,
+                colors: colors
+            )
         } else {
-            checkRownAndColumn(row: row, column: column)
+            // show error
         }
-
-        applyState()
-
-        delegate?.resolvingViewController(
-            self,
-            didChangeState: sourceField ?? field,
-            layers: layers,
-            currentLayer: layerColorId,
-            solution: solution,
-            colors: colors
-        )
     }
 }
 
