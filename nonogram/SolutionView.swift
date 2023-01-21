@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 protocol SolutionViewDelegate: AnyObject {
-    func solutionView(_: SolutionView, didTapColumn: Int, row: Int)
+    func solutionView(_: SolutionView, didTapColumn: Int, row: Int) -> Bool
     func solutionView(_: SolutionView, didLongTapColumn: Int, row: Int)
 }
 
@@ -173,6 +173,9 @@ class SolutionView: CellView {
         let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
         addGestureRecognizer(tapGR)
 
+        let panGR = UIPanGestureRecognizer(target: self, action: #selector(pan(_:)))
+        addGestureRecognizer(panGR)
+
         let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
         addGestureRecognizer(longtapGR)
 
@@ -214,9 +217,45 @@ class SolutionView: CellView {
 
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
-        delegate?.solutionView(self,
-                               didTapColumn: Int(location.x / cellAspectSize),
-                               row: Int(location.y / cellAspectSize))
+        _ = delegate?.solutionView(self,
+                                   didTapColumn: Int(location.x / cellAspectSize),
+                                   row: Int(location.y / cellAspectSize))
+    }
+
+    private var lastPoint: (row: Int, column: Int)?
+    private var stopped = false
+    private var startLocation: CGPoint = .zero
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        startLocation = touches.first!.location(in: self)
+    }
+
+    @objc private func pan(_ panGR: UIPanGestureRecognizer) {
+        switch panGR.state {
+        case .possible:
+            break
+        case .began:
+            let newPoint = (row: Int(startLocation.y / cellAspectSize), column: Int(startLocation.x / cellAspectSize))
+            lastPoint = newPoint
+            stopped = (delegate?.solutionView(self, didTapColumn: newPoint.column, row: newPoint.row)) ?? true
+            fallthrough
+        case .changed:
+            if stopped {
+                return
+            }
+            let location = panGR.location(in: self)
+            let newPoint = (row: Int(location.y / cellAspectSize), column: Int(location.x / cellAspectSize))
+            if lastPoint?.column != newPoint.column || lastPoint?.row != newPoint.row {
+                lastPoint = newPoint
+                stopped = (delegate?.solutionView(self, didTapColumn: newPoint.column, row: newPoint.row)) ?? true
+            }
+        case .ended, .cancelled, .failed:
+            lastPoint = nil
+            stopped = false
+            break
+        @unknown default:
+            break
+        }
     }
 
     @objc private func longtap(_ tapGR: UITapGestureRecognizer) {

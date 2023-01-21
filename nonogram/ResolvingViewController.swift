@@ -391,9 +391,9 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
         solutionView.focusedCell = (row: row, column: column)
     }
 
-    func solutionView(_ solutionView: SolutionView, didTapColumn column: Int, row: Int) {
+    func solutionView(_ solutionView: SolutionView, didTapColumn column: Int, row: Int) -> Bool {
         if field.points[row][column] != .undefined {
-            return
+            return true
         }
 
         var newValue: Field.Point
@@ -447,8 +447,11 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
                 solution: solution,
                 colors: colors
             )
+
+            return false
         } else {
             solutionView.showError(row: row, column: column)
+            return true
         }
     }
 }
