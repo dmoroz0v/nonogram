@@ -87,10 +87,10 @@ class NumbersView: CellView {
                     var defIndex = 0
                     var n = 0
                     for (pointIndex, point) in line.enumerated() {
-                        if point == .init(value: nil) {
+                        if point == .undefined {
                             break
                         }
-                        if point != .init(value: .empty) {
+                        if point != .empty {
                             n += 1
                         }
                         if n != 0 && (pointIndex + 1 == line.count || line[pointIndex + 1] != point) {
@@ -130,10 +130,10 @@ class NumbersView: CellView {
                     defIndex = numbersView.defs[defsIndex].count - 1
                     n = 0
                     for (pointIndex, point) in line.enumerated().reversed() {
-                        if point == .init(value: nil) {
+                        if point == .undefined {
                             break
                         }
-                        if point != .init(value: .empty) {
+                        if point != .empty {
                             n += 1
                         }
                         if n != 0 && (pointIndex == 0 || line[pointIndex - 1] != point) {

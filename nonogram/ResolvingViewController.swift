@@ -65,7 +65,7 @@ class ResolvingViewController: UIViewController {
     ) {
         field = Field(
             points: Array<[Field.Point]>(
-                repeating: Array<Field.Point>(repeating: .init(value: nil), count: verticalDefs.count),
+                repeating: Array<Field.Point>(repeating: .undefined, count: verticalDefs.count),
                 count: horizontalDefs.count
             ),
             horizintals: horizontalDefs,
@@ -210,29 +210,29 @@ class ResolvingViewController: UIViewController {
 
     func checkRownAndColumn(row: Int, column: Int) {
         var rowIsResolved = true
-        solution[row].enumerated().forEach { column, value in
-            if field.points[row][column] == .init(value: nil) && value > 0 {
+        for columnIndex in 0..<field.size.columns {
+            if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] > 0 {
                 rowIsResolved = false
             }
         }
         if rowIsResolved {
-            for columnIndex in 0..<field.points[row].count {
-                if field.points[row][columnIndex] == .init(value: nil) {
-                    field.points[row][columnIndex] = .init(value: .empty)
+            for columnIndex in 0..<field.size.columns {
+                if field.points[row][columnIndex] == .undefined {
+                    field.points[row][columnIndex] = .empty
                 }
             }
         }
 
         var columnIsResolver = true
-        for rowIndex in 0..<solution.count {
-            if field.points[rowIndex][column] == .init(value: nil) && solution[rowIndex][column] > 0 {
+        for rowIndex in 0..<field.size.rows {
+            if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] > 0 {
                 columnIsResolver = false
             }
         }
         if columnIsResolver {
-            for rowIndex in 0..<solution.count {
-                if field.points[rowIndex][column] == .init(value: nil) {
-                    field.points[rowIndex][column] = .init(value: .empty)
+            for rowIndex in 0..<field.size.rows {
+                if field.points[rowIndex][column] == .undefined {
+                    field.points[rowIndex][column] = .empty
                 }
             }
         }
@@ -246,22 +246,22 @@ class ResolvingViewController: UIViewController {
             sourceField = field
             if layers[penColor.id] == nil {
                 layers[penColor.id] = Field(
-                    points: field.points.map({ line in
-                        var line = line
-                        for (i, point) in line.enumerated() {
+                    points: field.points.map({ row in
+                        var row = row
+                        for (rowIndex, point) in row.enumerated() {
                             if case .color(let c) = point.value, c.id != penColor.id {
-                                line[i] = .init(value: .empty)
+                                row[rowIndex] = .empty
                             }
                         }
-                        return line
+                        return row
                     }),
-                    horizintals: sourceField.horizintals.map({ element in
-                        return element.filter { def in
+                    horizintals: sourceField.horizintals.map({ defs in
+                        return defs.filter { def in
                             def.color.id == penColor.id
                         }
                     }),
-                    verticals: sourceField.verticals.map({ element in
-                        return element.filter { def in
+                    verticals: sourceField.verticals.map({ defs in
+                        return defs.filter { def in
                             def.color.id == penColor.id
                         }
                     })
@@ -270,17 +270,17 @@ class ResolvingViewController: UIViewController {
 
             field = layers[penColor.id]
 
-            for (i, line) in sourceField.points.enumerated() {
-                for (j, p) in line.enumerated() {
-                    if case .color(let c) = p.value {
+            for (rowIndex, row) in sourceField.points.enumerated() {
+                for (columnIndex, point) in row.enumerated() {
+                    if case .color(let c) = point.value {
                         if c.id == penColor.id {
-                            field.points[i][j] = p
+                            field.points[rowIndex][columnIndex] = point
                         } else {
-                            field.points[i][j] = .init(value: .empty)
+                            field.points[rowIndex][columnIndex] = .empty
                         }
                     }
-                    if case .empty = p.value {
-                        field.points[i][j] = p
+                    if point == .empty {
+                        field.points[rowIndex][columnIndex] = point
                     }
                 }
             }
@@ -293,10 +293,10 @@ class ResolvingViewController: UIViewController {
             field = sourceField
             sourceField = nil
 
-            for (i, line) in layers[layerColorId!]!.points.enumerated() {
-                for (j, p) in line.enumerated() {
-                    if case .color(let c) = p.value, c.id == layerColorId {
-                        field.points[i][j] = p
+            for (rowIndex, row) in layers[layerColorId!]!.points.enumerated() {
+                for (columnIndex, point) in row.enumerated() {
+                    if case .color(let c) = point.value, c.id == layerColorId {
+                        field.points[rowIndex][columnIndex] = point
                     }
                 }
             }
@@ -381,55 +381,49 @@ extension ResolvingViewController: MenuViewDelegate {
 }
 
 extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource {
-    func solutionView(_ solutionView: SolutionView, pointForI i: Int, J j: Int) -> Field.Point {
-        return field.points[j][i]
+    func solutionView(_ solutionView: SolutionView, pointForColumn column: Int, row: Int) -> Field.Point {
+        return field.points[row][column]
     }
 
-    func solutionView(_ solutionView: SolutionView, didLongTapI i: Int, J j: Int) {
-        let row = j
-        let column = i
-
+    func solutionView(_ solutionView: SolutionView, didLongTapColumn column: Int, row: Int) {
         horizontalDefsCell.focusedIndex = row
         verticalDefsCell.focusedIndex = column
     }
 
-    func solutionView(_ solutionView: SolutionView, didTapI i: Int, J j: Int) {
-        let row = j
-        let column = i
-
+    func solutionView(_ solutionView: SolutionView, didTapColumn column: Int, row: Int) {
         horizontalDefsCell.focusedIndex = row
         verticalDefsCell.focusedIndex = column
 
         var newValue: Field.Point
         switch pen {
         case .empty:
-            newValue = .init(value: .empty)
+            newValue = .empty
         case .color(let c):
             newValue = .init(value: .color(c))
         case .layer(let c):
             newValue = .init(value: .color(c))
         }
         if newValue == field.points[row][column] {
-            field.points[row][column] = .init(value: nil)
+            field.points[row][column] = .undefined
         } else {
             field.points[row][column] = newValue
 
             let s = solution[row][column]
-            if s == 0 && newValue != .init(value: .empty) {
-                field.points[row][column] = .init(value: nil)
+            if s == 0 && newValue != .empty {
+                field.points[row][column] = .undefined
             }
             if s > 0 {
                 let c = colors[s - 1]
                 if layerColorId == nil {
                     if newValue != .init(value: .color(c)) {
-                        field.points[row][column] = .init(value: nil)
+                        field.points[row][column] = .undefined
                     }
-                    if newValue == .init(value: .empty) {
-                        field.points[row][column] = .init(value: nil)
+                    if newValue == .empty {
+                        field.points[row][column] = .undefined
                     }
                 } else {
-                    if layerColorId == c.id && newValue == .init(value: .empty) {
-                        field.points[row][column] = .init(value: nil)
+                    if layerColorId == c.id && newValue == .empty {
+                        field.points[row][column] = .undefined
                     }
                 }
             }

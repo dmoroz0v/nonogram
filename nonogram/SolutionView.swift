@@ -9,12 +9,12 @@ import Foundation
 import UIKit
 
 protocol SolutionViewDelegate: AnyObject {
-    func solutionView(_: SolutionView, didTapI: Int, J: Int)
-    func solutionView(_: SolutionView, didLongTapI: Int, J: Int)
+    func solutionView(_: SolutionView, didTapColumn: Int, row: Int)
+    func solutionView(_: SolutionView, didLongTapColumn: Int, row: Int)
 }
 
 protocol SolutionViewDataSource: AnyObject {
-    func solutionView(_: SolutionView, pointForI: Int, J: Int) -> Field.Point
+    func solutionView(_: SolutionView, pointForColumn: Int, row: Int) -> Field.Point
 }
 
 class SolutionView: CellView {
@@ -100,15 +100,15 @@ class SolutionView: CellView {
         override func draw(_ rect: CGRect) {
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
-            for i in 0..<solutionView.size.columns {
-                for j in 0..<solutionView.size.rows {
-                    let point = solutionView.dataSource!.solutionView(solutionView, pointForI: i, J: j)
+            for columnIndex in 0..<solutionView.size.columns {
+                for rowIndex in 0..<solutionView.size.rows {
+                    let point = solutionView.dataSource!.solutionView(solutionView, pointForColumn: columnIndex, row: rowIndex)
                     switch point.value {
                     case .color(let c):
                         ctx.setFillColor(c.c.cgColor)
                         let rectangle: CGRect = CGRect(
-                            x: solutionView.cellAspectSize * CGFloat(i),
-                            y: solutionView.cellAspectSize * CGFloat(j),
+                            x: solutionView.cellAspectSize * CGFloat(columnIndex),
+                            y: solutionView.cellAspectSize * CGFloat(rowIndex),
                             width: solutionView.cellAspectSize,
                             height: solutionView.cellAspectSize
                         )
@@ -116,8 +116,8 @@ class SolutionView: CellView {
                     case .empty:
                         ctx.setFillColor(UIColor.black.cgColor)
                         let rectangle: CGRect = CGRect(
-                            x: solutionView.cellAspectSize * CGFloat(i) + solutionView.cellAspectSize/2 - 2,
-                            y: solutionView.cellAspectSize * CGFloat(j) + solutionView.cellAspectSize/2 - 2,
+                            x: solutionView.cellAspectSize * CGFloat(columnIndex) + solutionView.cellAspectSize/2 - 2,
+                            y: solutionView.cellAspectSize * CGFloat(rowIndex) + solutionView.cellAspectSize/2 - 2,
                             width: 4,
                             height: 4
                         )
@@ -165,11 +165,15 @@ class SolutionView: CellView {
 
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
-        delegate?.solutionView(self, didTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
+        delegate?.solutionView(self,
+                               didTapColumn: Int(location.x / cellAspectSize),
+                               row: Int(location.y / cellAspectSize))
     }
 
     @objc private func longtap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
-        delegate?.solutionView(self, didLongTapI: Int(location.x / cellAspectSize), J: Int(location.y / cellAspectSize))
+        delegate?.solutionView(self,
+                               didLongTapColumn: Int(location.x / cellAspectSize),
+                               row: Int(location.y / cellAspectSize))
     }
 }
