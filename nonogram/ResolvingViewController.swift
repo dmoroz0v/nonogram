@@ -388,6 +388,7 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
     func solutionView(_ solutionView: SolutionView, didLongTapColumn column: Int, row: Int) {
         horizontalDefsCell.focusedIndex = row
         verticalDefsCell.focusedIndex = column
+        solutionView.focusedCell = (row: row, column: column)
     }
 
     func solutionView(_ solutionView: SolutionView, didTapColumn column: Int, row: Int) {
@@ -428,6 +429,7 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
 
             horizontalDefsCell.focusedIndex = row
             verticalDefsCell.focusedIndex = column
+            solutionView.focusedCell = (row: row, column: column)
 
             if let layerId = layerColorId {
                 layers[layerId] = field

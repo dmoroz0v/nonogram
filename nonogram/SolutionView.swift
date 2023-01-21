@@ -19,11 +19,93 @@ protocol SolutionViewDataSource: AnyObject {
 
 class SolutionView: CellView {
 
+    private class ContentView: UIView {
+
+        unowned var solutionView: SolutionView!
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            backgroundColor = .white
+        }
+
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func draw(_ rect: CGRect) {
+            guard let ctx = UIGraphicsGetCurrentContext() else { return }
+
+            for columnIndex in 0..<solutionView.size.columns {
+                for rowIndex in 0..<solutionView.size.rows {
+                    let point = solutionView.dataSource!.solutionView(solutionView, pointForColumn: columnIndex, row: rowIndex)
+                    let rectangle: CGRect = CGRect(
+                        x: solutionView.cellAspectSize * CGFloat(columnIndex),
+                        y: solutionView.cellAspectSize * CGFloat(rowIndex),
+                        width: solutionView.cellAspectSize,
+                        height: solutionView.cellAspectSize
+                    )
+                    switch point.value {
+                    case .color(let color):
+                        ctx.setFillColor(color.c.cgColor)
+                        ctx.fill(rectangle)
+                        if solutionView.focusedCell?.row == rowIndex,
+                           solutionView.focusedCell?.column == columnIndex {
+                            ctx.setStrokeColor(color.contrastColor.cgColor)
+                            var rectangle = rectangle
+                            rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                            ctx.setLineWidth(1)
+                            ctx.stroke(rectangle)
+                        }
+                    case .empty:
+                        ctx.setFillColor(UIColor.black.cgColor)
+                        let circleRect: CGRect = CGRect(
+                            x: solutionView.cellAspectSize * CGFloat(columnIndex) + solutionView.cellAspectSize/2 - 2,
+                            y: solutionView.cellAspectSize * CGFloat(rowIndex) + solutionView.cellAspectSize/2 - 2,
+                            width: 4,
+                            height: 4
+                        )
+                        ctx.fillEllipse(in: circleRect)
+                        if solutionView.focusedCell?.row == rowIndex,
+                           solutionView.focusedCell?.column == columnIndex {
+                            ctx.setStrokeColor(UIColor.gray.cgColor)
+                            var rectangle = rectangle
+                            rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                            ctx.setLineWidth(1)
+                            ctx.stroke(rectangle)
+                        }
+                    case .none:
+                        if solutionView.focusedCell?.row == rowIndex,
+                           solutionView.focusedCell?.column == columnIndex {
+                            ctx.setStrokeColor(UIColor.gray.cgColor)
+                            var rectangle = rectangle
+                            rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                            ctx.setLineWidth(1)
+                            ctx.stroke(rectangle)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     weak var delegate: SolutionViewDelegate?
     weak var dataSource: SolutionViewDataSource?
 
+    private let cv = ContentView()
     private var horizontals: [UIView] = []
     private var verticals: [UIView] = []
+
+    var cellAspectSize: CGFloat = 10 {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+
+    var focusedCell: (row: Int, column: Int)? {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
 
     var size: (columns: Int, rows: Int) = (columns: 1, rows: 1) {
         didSet {
@@ -83,60 +165,6 @@ class SolutionView: CellView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    private class ContentView: UIView {
-
-        unowned var solutionView: SolutionView!
-
-        override init(frame: CGRect) {
-            super.init(frame: frame)
-            backgroundColor = .white
-        }
-
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        override func draw(_ rect: CGRect) {
-            guard let ctx = UIGraphicsGetCurrentContext() else { return }
-
-            for columnIndex in 0..<solutionView.size.columns {
-                for rowIndex in 0..<solutionView.size.rows {
-                    let point = solutionView.dataSource!.solutionView(solutionView, pointForColumn: columnIndex, row: rowIndex)
-                    switch point.value {
-                    case .color(let c):
-                        ctx.setFillColor(c.c.cgColor)
-                        let rectangle: CGRect = CGRect(
-                            x: solutionView.cellAspectSize * CGFloat(columnIndex),
-                            y: solutionView.cellAspectSize * CGFloat(rowIndex),
-                            width: solutionView.cellAspectSize,
-                            height: solutionView.cellAspectSize
-                        )
-                        ctx.fill(rectangle)
-                    case .empty:
-                        ctx.setFillColor(UIColor.black.cgColor)
-                        let rectangle: CGRect = CGRect(
-                            x: solutionView.cellAspectSize * CGFloat(columnIndex) + solutionView.cellAspectSize/2 - 2,
-                            y: solutionView.cellAspectSize * CGFloat(rowIndex) + solutionView.cellAspectSize/2 - 2,
-                            width: 4,
-                            height: 4
-                        )
-                        ctx.fillEllipse(in: rectangle)
-                    case .none:
-                        break
-                    }
-                }
-            }
-        }
-    }
-
-    var cellAspectSize: CGFloat = 10 {
-        didSet {
-            cv.setNeedsLayout()
-        }
-    }
-
-    private let cv = ContentView()
 
     override func layoutSubviews() {
         super.layoutSubviews()
