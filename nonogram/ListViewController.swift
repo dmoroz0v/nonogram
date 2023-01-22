@@ -1,5 +1,5 @@
 //
-//  MenuViewController.swift
+//  ListViewController.swift
 //  nonogram
 //
 //  Created by Denis S. Morozov on 16.01.2023.
@@ -9,8 +9,8 @@ import Foundation
 import UIKit
 import SwiftSoup
 
-protocol MenuViewControllerDelegate: AnyObject {
-    func menuViewController(_: MenuViewController, selectWithUrl: URL)
+protocol ListViewControllerDelegate: AnyObject {
+    func listViewController(_: ListViewController, selectWithUrl: URL)
 }
 
 struct Item {
@@ -18,6 +18,42 @@ struct Item {
     var iocnURL: URL
     var name: String
     var image: UIImage?
+}
+
+class PageButtonsView: UIView {
+    let prevPageButton = UIButton()
+    let nextPageButton = UIButton()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        prevPageButton.translatesAutoresizingMaskIntoConstraints = false
+        nextPageButton.translatesAutoresizingMaskIntoConstraints = false
+
+        nextPageButton.setTitle("Следующая страница >", for: .normal)
+        nextPageButton.setTitleColor(.black, for: .normal)
+        prevPageButton.setTitle("< Предыдущая страница", for: .normal)
+        prevPageButton.setTitleColor(.black, for: .normal)
+        prevPageButton.setTitleColor(.lightGray, for: .disabled)
+
+        addSubview(prevPageButton)
+        addSubview(nextPageButton)
+
+        NSLayoutConstraint.activate([
+            prevPageButton.topAnchor.constraint(equalTo: topAnchor),
+            prevPageButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            prevPageButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
+            prevPageButton.trailingAnchor.constraint(equalTo: centerXAnchor),
+
+            nextPageButton.topAnchor.constraint(equalTo: topAnchor),
+            nextPageButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            nextPageButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
+            nextPageButton.leadingAnchor.constraint(equalTo: centerXAnchor),
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 }
 
 class ListLoader {
@@ -92,9 +128,9 @@ class ListLoader {
     }
 }
 
-class MenuViewController: UIViewController {
+class ListViewController: UIViewController {
 
-    weak var delegate: MenuViewControllerDelegate?
+    weak var delegate: ListViewControllerDelegate?
 
     let textField = UITextField()
     let loadButton = UIButton()
@@ -104,6 +140,8 @@ class MenuViewController: UIViewController {
 
     private var currentPage = 1
     private var items: [Item] = []
+
+    let pageButtonsView = PageButtonsView()
 
     @objc private func appMovedToForeground() {
         loadCurrentPage()
@@ -127,6 +165,8 @@ class MenuViewController: UIViewController {
             let tapGR = UITapGestureRecognizer(target: self, action: #selector(tapItem(_:)))
             itemView.addGestureRecognizer(tapGR)
         }
+
+        pageButtonsView.prevPageButton.isEnabled = currentPage > 1
     }
 
     let stackView = UIStackView()
@@ -153,17 +193,26 @@ class MenuViewController: UIViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(stackView)
 
+        pageButtonsView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pageButtonsView)
+        pageButtonsView.prevPageButton.addTarget(self, action: #selector(prevPage), for: .touchDown)
+        pageButtonsView.nextPageButton.addTarget(self, action: #selector(nextPage), for: .touchDown)
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: pageButtonsView.topAnchor),
 
             stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             scrollView.widthAnchor.constraint(equalTo: stackView.widthAnchor),
+
+            pageButtonsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pageButtonsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pageButtonsView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         let notificationCenter = NotificationCenter.default
@@ -177,7 +226,17 @@ class MenuViewController: UIViewController {
     @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
         let index = tapGR.view?.tag ?? 0
         let url = items[index].url
-        delegate?.menuViewController(self, selectWithUrl: url)
+        delegate?.listViewController(self, selectWithUrl: url)
+    }
+
+    @objc private func prevPage() {
+        currentPage -= 1
+        loadCurrentPage()
+    }
+
+    @objc private func nextPage() {
+        currentPage += 1
+        loadCurrentPage()
     }
 }
 

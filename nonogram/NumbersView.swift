@@ -80,7 +80,7 @@ class NumbersView: CellView {
                         let minColumn = min(startSelectedDef.column, endSelectedDef.column) - space
                         let maxColumn = max(startSelectedDef.column, endSelectedDef.column) - space
                         if defsIndex == startSelectedDef.row && defIndex >= minColumn && defIndex <= maxColumn {
-                            font = UIFont.boldSystemFont(ofSize: 15)
+                            font = UIFont.systemFont(ofSize: 15, weight: .heavy)
                             rectangle.origin.y -= 1
                         }
                     }

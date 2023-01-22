@@ -24,13 +24,13 @@ extension String {
     }
 }
 
-class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuViewControllerDelegate {
+class ViewController: UIViewController, ResolvingViewControllerDelegate, ListViewControllerDelegate {
 
     var currentViewController: UIViewController?
 
     let crosswordLoader = CrosswordLoader()
 
-    func menuViewController(_: MenuViewController, selectWithUrl url: URL) {
+    func listViewController(_: ListViewController, selectWithUrl url: URL) {
         crosswordLoader.load(url: url) { horizontalDefs, verticalDefs, solution, colors in
             DispatchQueue.main.async {
                 let resolvingViewController = ResolvingViewController(
@@ -68,19 +68,19 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, MenuVie
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
-        let menuVC = MenuViewController()
-        menuVC.delegate = self
+        let listVC = ListViewController()
+        listVC.delegate = self
 
-        showVC(menuVC)
+        showVC(listVC)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let menuVC = MenuViewController()
-        menuVC.delegate = self
+        let listVC = ListViewController()
+        listVC.delegate = self
 
-        showVC(menuVC)
+        showVC(listVC)
     }
 
     func showVC(_ vc: UIViewController) {
