@@ -26,7 +26,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A25E82FF296FFEEE00CAC48D /* Nono.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nono.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A25E82FF296FFEEE00CAC48D /* nonogram.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nonogram.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A25E8302296FFEEE00CAC48D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A25E8304296FFEEE00CAC48D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A25E8306296FFEEE00CAC48D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -68,7 +68,7 @@
 		A25E8300296FFEEE00CAC48D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A25E82FF296FFEEE00CAC48D /* Nono.app */,
+				A25E82FF296FFEEE00CAC48D /* nonogram.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,7 +116,7 @@
 				A2F65D67297D7141008B1C23 /* SwiftSoup */,
 			);
 			productName = nonogram;
-			productReference = A25E82FF296FFEEE00CAC48D /* Nono.app */;
+			productReference = A25E82FF296FFEEE00CAC48D /* nonogram.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -260,7 +260,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -314,7 +314,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -331,9 +331,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = WWR4YB72U6;
+				DEVELOPMENT_TEAM = AN9S2DSXZS;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = nonogram/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Nono;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -344,7 +346,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dmz.nonogram;
-				PRODUCT_NAME = Nono;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -358,9 +360,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = WWR4YB72U6;
+				DEVELOPMENT_TEAM = AN9S2DSXZS;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = nonogram/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Nono;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -371,7 +375,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dmz.nonogram;
-				PRODUCT_NAME = Nono;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

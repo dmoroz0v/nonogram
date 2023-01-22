@@ -22,7 +22,7 @@ class CrosswordLoader {
                     s = s.matching("d=\\[\\[.+?\\]\\]").first!
                     s = s.replacingOccurrences(of: "d=[[", with: "")
                     s = s.replacingOccurrences(of: "]]", with: "")
-                    let rows = s.split(separator: "],[")
+                    let rows = s.components(separatedBy: "],[")
 
                     for row in rows {
                         var arr: [Int] = []
