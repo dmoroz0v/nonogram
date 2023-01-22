@@ -79,6 +79,10 @@ class ControlsPanelView: UIView {
         super.init(frame: frame)
 
         backgroundColor = .white
+        layer.cornerRadius = 4
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowRadius = 16
+        layer.shadowOpacity = 0.2
 
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
@@ -113,10 +117,10 @@ class ControlsPanelView: UIView {
         addSubview(stackView)
 
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
         ])
 
         update()

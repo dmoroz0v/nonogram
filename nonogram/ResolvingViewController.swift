@@ -166,6 +166,12 @@ class ResolvingViewController: UIViewController {
         controlsPanelView.delegate = self
         view.addSubview(controlsPanelView)
 
+        let controlsPanelViewPanGR = UIPanGestureRecognizer(
+            target: self,
+            action: #selector(controlsPanelViewPan(_:))
+        )
+        controlsPanelView.addGestureRecognizer(controlsPanelViewPanGR)
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -329,6 +335,29 @@ class ResolvingViewController: UIViewController {
             controlsPanelView.showCommon()
         } else {
             controlsPanelView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
+        }
+    }
+
+    private var controlsPanelViewPanPrevLocation: CGPoint?
+    @objc private func controlsPanelViewPan(_ panGR: UIPanGestureRecognizer) {
+        switch panGR.state {
+        case .possible:
+            break
+        case .began, .changed:
+            if let controlsPanelViewPanPrevLocation = self.controlsPanelViewPanPrevLocation {
+                let newPoint = panGR.location(in: view)
+                var origin = controlsPanelView.frame.origin
+                origin.x += (newPoint.x - controlsPanelViewPanPrevLocation.x)
+                origin.y += (newPoint.y - controlsPanelViewPanPrevLocation.y)
+                controlsPanelView.frame.origin = origin
+                self.controlsPanelViewPanPrevLocation = newPoint
+            } else {
+                controlsPanelViewPanPrevLocation = panGR.location(in: view)
+            }
+        case .ended, .cancelled, .failed:
+            controlsPanelViewPanPrevLocation = nil
+        @unknown default:
+            break
         }
     }
 
