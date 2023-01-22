@@ -31,9 +31,40 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
     let crosswordLoader = CrosswordLoader()
 
     func listViewController(_: ListViewController, selectWithUrl url: URL) {
+        if let data = storage.load(key: url.absoluteString) {
+            let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
+            alert.popoverPresentationController?.sourceView = view
+            alert.addAction(.init(title: "Новая", style: .default, handler: { _ in
+                self.loadCrossword(url: url)
+            }))
+            alert.addAction(.init(title: "Продолжить", style: .default, handler: { _ in
+                let resolvingViewController = ResolvingViewController(
+                    url: url,
+                    field: data.field,
+                    layers: data.layers,
+                    currentLayer: data.currentLayer,
+                    solution: data.solution,
+                    colors: data.colors
+                )
+
+                resolvingViewController.delegate = self
+
+                self.showVC(resolvingViewController)
+            }))
+            alert.addAction(.init(title: "Отмена", style: .destructive, handler: { _ in
+
+            }))
+            present(alert, animated: true)
+            return
+        }
+        loadCrossword(url: url)
+    }
+
+    func loadCrossword(url: URL) {
         crosswordLoader.load(url: url) { horizontalDefs, verticalDefs, solution, colors in
             DispatchQueue.main.async {
                 let resolvingViewController = ResolvingViewController(
+                    url: url,
                     horizontalDefs: horizontalDefs,
                     verticalDefs: verticalDefs,
                     solution: solution,
@@ -56,9 +87,11 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         layers: [String : Field],
         currentLayer: String?,
         solution: [[Int]],
-        colors: [Field.Color]
+        colors: [Field.Color],
+        url: URL
     ) {
         storage.save(
+            key: url.absoluteString,
             field: field,
             layers: layers,
             currentLayer: currentLayer,

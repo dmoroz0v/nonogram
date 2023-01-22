@@ -21,7 +21,8 @@ protocol ResolvingViewControllerDelegate: AnyObject {
         layers: [String: Field],
         currentLayer: String?,
         solution: [[Int]],
-        colors: [Field.Color]
+        colors: [Field.Color],
+        url: URL
     )
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
@@ -45,6 +46,7 @@ class ResolvingViewController: UIViewController {
     private let verticalDefsCell = NumbersView()
     private let solutionView = SolutionView()
 
+    private let url: URL
     private let solution: [[Int]]
     private let colors: [Field.Color]
     private var field: Field!
@@ -58,11 +60,13 @@ class ResolvingViewController: UIViewController {
     }
 
     init(
+        url: URL,
         horizontalDefs: [[Field.Definition]],
         verticalDefs: [[Field.Definition]],
         solution: [[Int]],
         colors: [Field.Color]
     ) {
+        self.url = url
         field = Field(
             points: Array<[Field.Point]>(
                 repeating: Array<Field.Point>(repeating: .undefined, count: verticalDefs.count),
@@ -77,12 +81,14 @@ class ResolvingViewController: UIViewController {
     }
 
     init(
+        url: URL,
         field: Field,
         layers: [String: Field],
         currentLayer: String?,
         solution: [[Int]],
         colors: [Field.Color]
     ) {
+        self.url = url
         self.field = field
         self.layers = layers
         self.layerColorId = currentLayer
@@ -320,7 +326,8 @@ class ResolvingViewController: UIViewController {
             layers: layers,
             currentLayer: layerColorId,
             solution: solution,
-            colors: colors
+            colors: colors,
+            url: url
         )
     }
 
@@ -474,7 +481,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
                 layers: layers,
                 currentLayer: layerColorId,
                 solution: solution,
-                colors: colors
+                colors: colors,
+                url: url
             )
 
             return false

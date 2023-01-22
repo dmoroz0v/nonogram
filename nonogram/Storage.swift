@@ -19,7 +19,7 @@ class Storage {
     private var saving = false
     private var pendingData: Data?
 
-    func save(field: Field, layers: [String: Field], currentLayer: String?, solution: [[Int]], colors: [Field.Color]) {
+    func save(key: String, field: Field, layers: [String: Field], currentLayer: String?, solution: [[Int]], colors: [Field.Color]) {
         let data = Data(
             field: field,
             layers: layers,
@@ -31,31 +31,31 @@ class Storage {
             self.pendingData = data
             return
         }
-        save(data)
+        save(data, key: key)
     }
 
-    private func save(_ data: Data) {
+    private func save(_ data: Data, key: String) {
         saving = true
         DispatchQueue.global().async {
 
             let d = try? JSONEncoder().encode(data)
             if let d = d {
                 let str = String(decoding: d, as: UTF8.self)
-                UserDefaults.standard.set(str, forKey: "Nonogram-Saved")
+                UserDefaults.standard.set(str, forKey: "Nonogram-Saved" + key)
                 UserDefaults.standard.synchronize()
             }
 
             DispatchQueue.main.async {
                 self.saving = false
                 if let data = self.pendingData {
-                    self.save(data)
+                    self.save(data, key: key)
                 }
             }
         }
     }
 
-    func load() -> Data? {
-        let str = UserDefaults.standard.string(forKey: "Nonogram-Saved")
+    func load(key: String) -> Data? {
+        let str = UserDefaults.standard.string(forKey: "Nonogram-Saved" + key)
         if let str = str {
             if let d = str.data(using: .utf8) {
                 return try? JSONDecoder().decode(Data.self, from: d)
