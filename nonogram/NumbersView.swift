@@ -409,7 +409,6 @@ class NumbersView: CellView {
 
 class LongPressPanGR: UIGestureRecognizer {
     private var timer: Timer?
-    private var gestureStarted = false
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
@@ -425,6 +424,9 @@ class LongPressPanGR: UIGestureRecognizer {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard state != .possible else {
+            return
+        }
         if state == .began {
             state = .changed
         } else {
