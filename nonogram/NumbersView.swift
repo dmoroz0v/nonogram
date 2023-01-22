@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
 
 protocol NumbersViewDelegate: AnyObject {
     func numbersView(_: NumbersView, defsForIndex: Int) -> [Field.Point]
@@ -38,13 +39,14 @@ class NumbersView: CellView {
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
             for (defsIndex, line) in numbersView.defs.enumerated() {
-                for (defIndex, def) in line.reversed().enumerated() {
+                for (defIndex, def) in line.enumerated() {
+                    let space = numbersView.offset - numbersView.defs[defsIndex].count
                     ctx.setFillColor(def.color.c.cgColor)
                     let cellAspectSize = numbersView.cellAspectSize
                     var rectangle: CGRect
                     if numbersView.axis == .horizontal {
                         rectangle = CGRect(
-                            x: cellAspectSize * CGFloat(numbersView.offset - defIndex - 1),
+                            x: cellAspectSize * CGFloat(space + defIndex),
                             y: cellAspectSize * CGFloat(defsIndex),
                             width: cellAspectSize,
                             height: cellAspectSize
@@ -52,7 +54,7 @@ class NumbersView: CellView {
                     } else {
                         rectangle = CGRect(
                             x: cellAspectSize * CGFloat(defsIndex),
-                            y: cellAspectSize * CGFloat(numbersView.offset - defIndex - 1),
+                            y: cellAspectSize * CGFloat(space + defIndex),
                             width: cellAspectSize,
                             height: cellAspectSize
                         )
@@ -72,7 +74,16 @@ class NumbersView: CellView {
                     rectangle.origin.y += 4
                     let paragraphStyle = NSMutableParagraphStyle()
                     paragraphStyle.alignment = .center
-                    let font = UIFont.systemFont(ofSize: 14)
+                    var font = UIFont.systemFont(ofSize: 14)
+                    if let startSelectedDef = numbersView.startSelectedDef {
+                        let endSelectedDef = (numbersView.endSelectedDef ?? numbersView.startSelectedDef)!
+                        let minColumn = min(startSelectedDef.column, endSelectedDef.column) - space
+                        let maxColumn = max(startSelectedDef.column, endSelectedDef.column) - space
+                        if defsIndex == startSelectedDef.row && defIndex >= minColumn && defIndex <= maxColumn {
+                            font = UIFont.boldSystemFont(ofSize: 15)
+                            rectangle.origin.y -= 1
+                        }
+                    }
                     let string = NSAttributedString(
                         string: "\(def.n)",
                         attributes: [
@@ -248,6 +259,9 @@ class NumbersView: CellView {
             contentView.leadingAnchor.constraint(equalTo: cv.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: cv.trailingAnchor),
         ])
+
+        let longPressPanGR = LongPressPanGR(target: self, action: #selector(longPressPan(_:)))
+        addGestureRecognizer(longPressPanGR)
     }
 
     required init?(coder: NSCoder) {
@@ -257,5 +271,177 @@ class NumbersView: CellView {
     override func setNeedsDisplay() {
         super.setNeedsDisplay()
         cv.setNeedsDisplay()
+    }
+
+    var startSelectedDef: (row: Int, column: Int)?
+    var endSelectedDef: (row: Int, column: Int)?
+
+    @objc private func longPressPan(_ gr: LongPressPanGR) {
+        switch gr.state {
+        case .possible:
+            break
+        case .began:
+            let location = gr.location(in: self)
+            let startSelectedDef: (row: Int, column: Int)
+            switch axis {
+            case .horizontal:
+                startSelectedDef = (
+                    row: Int(location.y / cellAspectSize),
+                    column: Int(location.x / cellAspectSize)
+                )
+            case .vertical:
+                startSelectedDef = (
+                    row: Int(location.x / cellAspectSize),
+                    column: Int(location.y / cellAspectSize)
+                )
+            @unknown default:
+                fatalError()
+            }
+            let space = offset - defs[startSelectedDef.row].count
+            if startSelectedDef.column >= space {
+                self.startSelectedDef = startSelectedDef
+            }
+        case .changed:
+            guard let startSelectedDef = startSelectedDef else {
+                return
+            }
+            let location = gr.location(in: self)
+            let endSelectedDef: (row: Int, column: Int)
+            switch axis {
+            case .horizontal:
+                endSelectedDef = (
+                    row: startSelectedDef.row,
+                    column: Int(location.x / cellAspectSize)
+                )
+            case .vertical:
+                endSelectedDef = (
+                    row: startSelectedDef.row,
+                    column: Int(location.y / cellAspectSize)
+                )
+            @unknown default:
+                fatalError()
+            }
+            let adustColumnIndex = offset - defs[endSelectedDef.row].count
+            if endSelectedDef.column >= adustColumnIndex &&
+                endSelectedDef.column < offset {
+                self.endSelectedDef = endSelectedDef
+            }
+        case .ended, .cancelled:
+            startSelectedDef = nil
+            endSelectedDef = nil
+        case .failed:
+            break
+        @unknown default:
+            break
+        }
+
+        drawSum()
+    }
+
+    private lazy var sumLabelView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .clear
+        v.layer.shadowOpacity = 0.2
+        v.layer.shadowColor = UIColor.black.cgColor
+        v.layer.shadowRadius = 4
+        return v
+    }()
+
+    private lazy var sumLabel: UILabel = {
+        let l = UILabel()
+        l.backgroundColor = .white
+        l.layer.cornerRadius = 4
+        l.layer.masksToBounds = true
+        l.textAlignment = .center
+        l.font = UIFont.systemFont(ofSize: 16)
+        sumLabelView.addSubview(l)
+        return l
+    }()
+
+    func drawSum() {
+        guard let startSelectedDef = startSelectedDef else {
+            sumLabelView.removeFromSuperview()
+            setNeedsDisplay()
+            return
+        }
+        let endSelectedDef = endSelectedDef ?? startSelectedDef
+
+        var n = 0
+        let space = (offset - defs[startSelectedDef.row].count)
+        let minColumn = min(startSelectedDef.column, endSelectedDef.column)
+        let maxColumn = max(startSelectedDef.column, endSelectedDef.column)
+
+        var prevDef: Field.Definition?
+        for columnIndex in minColumn...maxColumn {
+            let def = defs[startSelectedDef.row][columnIndex - space]
+            n += def.n
+            if def.color.id == prevDef?.color.id {
+                n += 1
+            }
+            prevDef = def
+        }
+
+        if sumLabelView.superview == nil {
+            cv.addSubview(sumLabelView)
+        }
+        sumLabelView.frame.size = CGSize(width: cellAspectSize, height: cellAspectSize)
+        sumLabel.frame.size = CGSize(width: cellAspectSize, height: cellAspectSize)
+        sumLabel.text = "\(n)"
+
+        switch axis {
+        case .horizontal:
+            sumLabelView.center = CGPoint(
+                x: cellAspectSize * CGFloat(maxColumn + minColumn) / 2 + cellAspectSize/2,
+                y: CGFloat(startSelectedDef.row) * cellAspectSize - cellAspectSize / 2
+            )
+        case .vertical:
+            sumLabelView.center = CGPoint(
+                x: CGFloat(startSelectedDef.row) * cellAspectSize - cellAspectSize / 2,
+                y: cellAspectSize * CGFloat(maxColumn + minColumn) / 2 + cellAspectSize/2
+            )
+        @unknown default:
+            break
+        }
+
+        setNeedsDisplay()
+    }
+}
+
+class LongPressPanGR: UIGestureRecognizer {
+    private var timer: Timer?
+    private var gestureStarted = false
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+            if self.timer != nil {
+                self.timer?.invalidate()
+                self.timer = nil
+
+                self.state = .began
+            } else {
+                self.state = .failed
+            }
+        }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if state == .began {
+            state = .changed
+        } else {
+            timer?.invalidate()
+            timer = nil
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if state == .began || state == .changed {
+            state = .ended
+        }
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if state == .began || state == .changed {
+            state = .cancelled
+        }
     }
 }

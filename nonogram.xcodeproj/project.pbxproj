@@ -24,7 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A25E82FF296FFEEE00CAC48D /* nonogram.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nonogram.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A25E82FF296FFEEE00CAC48D /* Nono.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nono.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A25E8302296FFEEE00CAC48D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A25E8304296FFEEE00CAC48D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A25E8306296FFEEE00CAC48D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -64,7 +64,7 @@
 		A25E8300296FFEEE00CAC48D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A25E82FF296FFEEE00CAC48D /* nonogram.app */,
+				A25E82FF296FFEEE00CAC48D /* Nono.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -110,7 +110,7 @@
 			packageProductDependencies = (
 			);
 			productName = nonogram;
-			productReference = A25E82FF296FFEEE00CAC48D /* nonogram.app */;
+			productReference = A25E82FF296FFEEE00CAC48D /* Nono.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -336,7 +336,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dmz.nonogram;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Nono;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -363,7 +363,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dmz.nonogram;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Nono;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
