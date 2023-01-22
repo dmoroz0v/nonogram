@@ -173,8 +173,9 @@ class SolutionView: CellView {
         let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
         addGestureRecognizer(tapGR)
 
-        let panGR = UIPanGestureRecognizer(target: self, action: #selector(pan(_:)))
-        addGestureRecognizer(panGR)
+        //выключено пока так как конфликт со scrollview
+        //let panGR = UIPanGestureRecognizer(target: self, action: #selector(pan(_:)))
+        //addGestureRecognizer(panGR)
 
         let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
         addGestureRecognizer(longtapGR)

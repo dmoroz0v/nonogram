@@ -40,7 +40,7 @@ class ResolvingViewController: UIViewController {
     // views
     private let scrollView = UIScrollView()
     private let contentView = CellView()
-    private let menuView = MenuView()
+    private let controlsPanelView = ControlsPanelView()
     private let horizontalDefsCell = NumbersView()
     private let verticalDefsCell = NumbersView()
     private let solutionView = SolutionView()
@@ -53,7 +53,7 @@ class ResolvingViewController: UIViewController {
     private var layerColorId: String?
     private var pen: Pen = .empty {
         didSet {
-            menuView.pen = pen
+            controlsPanelView.pen = pen
         }
     }
 
@@ -161,10 +161,10 @@ class ResolvingViewController: UIViewController {
         solutionView.dataSource = self
         contentView.contentView.addSubview(solutionView)
 
-        menuView.translatesAutoresizingMaskIntoConstraints = false
-        menuView.colors = field.colors
-        menuView.delegate = self
-        view.addSubview(menuView)
+        controlsPanelView.translatesAutoresizingMaskIntoConstraints = false
+        controlsPanelView.colors = field.colors
+        controlsPanelView.delegate = self
+        view.addSubview(controlsPanelView)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -201,8 +201,8 @@ class ResolvingViewController: UIViewController {
             solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
             solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
 
-            menuView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            menuView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            controlsPanelView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            controlsPanelView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
 
         applyState()
@@ -326,9 +326,9 @@ class ResolvingViewController: UIViewController {
         verticalDefsCell.setNeedsDisplay()
 
         if layerColorId == nil {
-            menuView.showCommon()
+            controlsPanelView.showCommon()
         } else {
-            menuView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
+            controlsPanelView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
         }
     }
 
@@ -350,16 +350,16 @@ extension ResolvingViewController: NumbersViewDelegate {
     }
 }
 
-extension ResolvingViewController: MenuViewDelegate {
-    func menuViewDidTapExit(_: MenuView) {
+extension ResolvingViewController: ControlsPanelViewDelegate {
+    func controlsPanelViewDidTapExit(_: ControlsPanelView) {
         delegate?.resolvingViewControllerDidTapExit(self)
     }
 
-    func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color) {
+    func controlsPanelViewDidSelctColorForCurrentLayer(_: ControlsPanelView, color: Field.Color) {
         pen = .layer(color)
     }
 
-    func menuViewDidCloseLayer(_ mv: MenuView) {
+    func controlsPanelViewDidCloseLayer(_: ControlsPanelView) {
         if case .layer(let c) = pen {
             update(with: .closeAndSelectPen(pen: .color(c)))
         } else {
@@ -367,11 +367,11 @@ extension ResolvingViewController: MenuViewDelegate {
         }
     }
 
-    func menuViewPresentingViewController(_: MenuView) -> UIViewController {
+    func controlsPanelViewPresentingViewController(_: ControlsPanelView) -> UIViewController {
         return self
     }
 
-    func menuView(_: MenuView, didSelectPen pen: Pen) {
+    func controlsPanelView(_: ControlsPanelView, didSelectPen pen: Pen) {
         if case .layer(let penColor) = pen {
             update(with: .selectLayer(penColor: penColor))
         } else {

@@ -1,5 +1,5 @@
 //
-//  MenuView.swift
+//  ControlsPanelView.swift
 //  nonogram
 //
 //  Created by Denis S. Morozov on 12.01.2023.
@@ -8,17 +8,17 @@
 import Foundation
 import UIKit
 
-protocol MenuViewDelegate: AnyObject {
-    func menuViewDidTapExit(_: MenuView)
-    func menuViewPresentingViewController(_: MenuView) -> UIViewController
-    func menuView(_: MenuView, didSelectPen: Pen)
-    func menuViewDidCloseLayer(_: MenuView)
-    func menuViewDidSelctColorForCurrentLayer(_: MenuView, color: Field.Color)
+protocol ControlsPanelViewDelegate: AnyObject {
+    func controlsPanelViewDidTapExit(_: ControlsPanelView)
+    func controlsPanelViewPresentingViewController(_: ControlsPanelView) -> UIViewController
+    func controlsPanelView(_: ControlsPanelView, didSelectPen: Pen)
+    func controlsPanelViewDidCloseLayer(_: ControlsPanelView)
+    func controlsPanelViewDidSelctColorForCurrentLayer(_: ControlsPanelView, color: Field.Color)
 }
 
-class MenuView: UIView {
+class ControlsPanelView: UIView {
 
-    weak var delegate: MenuViewDelegate?
+    weak var delegate: ControlsPanelViewDelegate?
 
     private let exit = UIButton()
     private let empty = UIButton()
@@ -166,19 +166,19 @@ class MenuView: UIView {
     }
 
     @objc private func tapExit() {
-        delegate?.menuViewDidTapExit(self)
+        delegate?.controlsPanelViewDidTapExit(self)
     }
 
     @objc private func tapEmpty() {
-        delegate?.menuView(self, didSelectPen: .empty)
+        delegate?.controlsPanelView(self, didSelectPen: .empty)
     }
 
     @objc private func tapClose() {
-        delegate?.menuViewDidCloseLayer(self)
+        delegate?.controlsPanelViewDidCloseLayer(self)
     }
 
     @objc private func tapLayerColor() {
-        delegate?.menuViewDidSelctColorForCurrentLayer(self, color: selectedLayerColor)
+        delegate?.controlsPanelViewDidSelctColorForCurrentLayer(self, color: selectedLayerColor)
     }
 
     var popoverContentController: SelectColorViewController?
@@ -190,7 +190,7 @@ class MenuView: UIView {
         popoverContentController.didSelect = { [weak self] i in
             self?.popoverContentController?.dismiss(animated: true)
             self?.popoverContentController = nil
-            self?.delegate?.menuView(self!, didSelectPen: .color(self!.colors[i]))
+            self?.delegate?.controlsPanelView(self!, didSelectPen: .color(self!.colors[i]))
         }
 
         if let popoverPresentationController = popoverContentController.popoverPresentationController {
@@ -198,7 +198,7 @@ class MenuView: UIView {
             popoverPresentationController.sourceView = self
             popoverPresentationController.sourceRect = color.frame
 
-            let presentingViewController = delegate?.menuViewPresentingViewController(self)
+            let presentingViewController = delegate?.controlsPanelViewPresentingViewController(self)
             presentingViewController?.present(popoverContentController, animated: true, completion: nil)
         }
     }
@@ -211,7 +211,7 @@ class MenuView: UIView {
         popoverContentController.didSelect = { [weak self] i in
             self?.popoverContentController?.dismiss(animated: true)
             self?.popoverContentController = nil
-            self?.delegate?.menuView(self!, didSelectPen: .layer(self!.colors[i]))
+            self?.delegate?.controlsPanelView(self!, didSelectPen: .layer(self!.colors[i]))
         }
 
         if let popoverPresentationController = popoverContentController.popoverPresentationController {
@@ -219,7 +219,7 @@ class MenuView: UIView {
             popoverPresentationController.sourceView = self
             popoverPresentationController.sourceRect = layerB.frame
 
-            let presentingViewController = delegate?.menuViewPresentingViewController(self)
+            let presentingViewController = delegate?.controlsPanelViewPresentingViewController(self)
             presentingViewController?.present(popoverContentController, animated: true, completion: nil)
         }
     }

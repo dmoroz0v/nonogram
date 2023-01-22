@@ -15,7 +15,7 @@
 		A25E830F296FFEEE00CAC48D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */; };
 		A28183642975A2DE00104A3E /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28183632975A2DE00104A3E /* MenuViewController.swift */; };
 		A2B7FD37297C15FB00A682B9 /* SolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B7FD36297C15FB00A682B9 /* SolutionView.swift */; };
-		A2C6591C2970633700FE29B7 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591B2970633700FE29B7 /* MenuView.swift */; };
+		A2C6591C2970633700FE29B7 /* ControlsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */; };
 		A2C6591E2970635900FE29B7 /* CellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591D2970635900FE29B7 /* CellView.swift */; };
 		A2C659202970636900FE29B7 /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591F2970636900FE29B7 /* Field.swift */; };
 		A2C659222970642C00FE29B7 /* ResolvingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C659212970642C00FE29B7 /* ResolvingViewController.swift */; };
@@ -34,7 +34,7 @@
 		A25E8310296FFEEE00CAC48D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A28183632975A2DE00104A3E /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
 		A2B7FD36297C15FB00A682B9 /* SolutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolutionView.swift; sourceTree = "<group>"; };
-		A2C6591B2970633700FE29B7 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
+		A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsPanelView.swift; sourceTree = "<group>"; };
 		A2C6591D2970635900FE29B7 /* CellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellView.swift; sourceTree = "<group>"; };
 		A2C6591F2970636900FE29B7 /* Field.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Field.swift; sourceTree = "<group>"; };
 		A2C659212970642C00FE29B7 /* ResolvingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvingViewController.swift; sourceTree = "<group>"; };
@@ -79,7 +79,7 @@
 				A25E830B296FFEEE00CAC48D /* Assets.xcassets */,
 				A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */,
 				A25E8310296FFEEE00CAC48D /* Info.plist */,
-				A2C6591B2970633700FE29B7 /* MenuView.swift */,
+				A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */,
 				A2C6591D2970635900FE29B7 /* CellView.swift */,
 				A2C6591F2970636900FE29B7 /* Field.swift */,
 				A2C659212970642C00FE29B7 /* ResolvingViewController.swift */,
@@ -168,7 +168,7 @@
 			files = (
 				A2C659222970642C00FE29B7 /* ResolvingViewController.swift in Sources */,
 				A2B7FD37297C15FB00A682B9 /* SolutionView.swift in Sources */,
-				A2C6591C2970633700FE29B7 /* MenuView.swift in Sources */,
+				A2C6591C2970633700FE29B7 /* ControlsPanelView.swift in Sources */,
 				A25E8307296FFEEE00CAC48D /* ViewController.swift in Sources */,
 				A2C659272971336D00FE29B7 /* NumbersView.swift in Sources */,
 				A28183642975A2DE00104A3E /* MenuViewController.swift in Sources */,
