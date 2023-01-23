@@ -364,10 +364,8 @@ class ResolvingViewController: UIViewController {
         case .began, .changed:
             if let controlsPanelViewPanPrevLocation = self.controlsPanelViewPanPrevLocation {
                 let newPoint = panGR.location(in: view)
-                var origin = controlsPanelView.frame.origin
                 controlsPanelViewHotizontal!.constant += (newPoint.x - controlsPanelViewPanPrevLocation.x)
                 controlsPanelViewVertical!.constant += (newPoint.y - controlsPanelViewPanPrevLocation.y)
-                controlsPanelView.frame.origin = origin
                 self.controlsPanelViewPanPrevLocation = newPoint
             } else {
                 controlsPanelViewPanPrevLocation = panGR.location(in: view)
