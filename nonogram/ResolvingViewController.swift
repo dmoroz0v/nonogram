@@ -46,6 +46,9 @@ class ResolvingViewController: UIViewController {
     private let verticalDefsCell = NumbersView()
     private let solutionView = SolutionView()
 
+    private var controlsPanelViewHotizontal: NSLayoutConstraint?
+    private var controlsPanelViewVertical: NSLayoutConstraint?
+
     private let url: URL
     private let solution: [[Int]]
     private let colors: [Field.Color]
@@ -213,8 +216,16 @@ class ResolvingViewController: UIViewController {
             solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
             solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
 
-            controlsPanelView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            controlsPanelView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            {
+                controlsPanelViewHotizontal = controlsPanelView.trailingAnchor.constraint(
+                    equalTo: view.trailingAnchor)
+                return controlsPanelViewHotizontal!
+            }(),
+            {
+                controlsPanelViewVertical = controlsPanelView.centerYAnchor.constraint(
+                    equalTo: view.centerYAnchor)
+                return controlsPanelViewVertical!
+            }(),
         ])
 
         applyState()
@@ -354,8 +365,8 @@ class ResolvingViewController: UIViewController {
             if let controlsPanelViewPanPrevLocation = self.controlsPanelViewPanPrevLocation {
                 let newPoint = panGR.location(in: view)
                 var origin = controlsPanelView.frame.origin
-                origin.x += (newPoint.x - controlsPanelViewPanPrevLocation.x)
-                origin.y += (newPoint.y - controlsPanelViewPanPrevLocation.y)
+                controlsPanelViewHotizontal!.constant += (newPoint.x - controlsPanelViewPanPrevLocation.x)
+                controlsPanelViewVertical!.constant += (newPoint.y - controlsPanelViewPanPrevLocation.y)
                 controlsPanelView.frame.origin = origin
                 self.controlsPanelViewPanPrevLocation = newPoint
             } else {
