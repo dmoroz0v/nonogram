@@ -439,11 +439,15 @@ class LongPressPanGR: UIGestureRecognizer {
         if state == .began || state == .changed {
             state = .ended
         }
+        timer?.invalidate()
+        timer = nil
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         if state == .began || state == .changed {
             state = .cancelled
         }
+        timer?.invalidate()
+        timer = nil
     }
 }
