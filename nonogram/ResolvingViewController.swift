@@ -235,7 +235,12 @@ class ResolvingViewController: UIViewController {
     func checkRownAndColumn(row: Int, column: Int) {
         var rowIsResolved = true
         for columnIndex in 0..<field.size.columns {
-            if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] > 0 {
+            if let layerColorId = layerColorId {
+                let index = colors.firstIndex { $0.id == layerColorId }! + 1
+                if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] == index {
+                    rowIsResolved = false
+                }
+            } else if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] > 0 {
                 rowIsResolved = false
             }
         }
@@ -247,13 +252,18 @@ class ResolvingViewController: UIViewController {
             }
         }
 
-        var columnIsResolver = true
+        var columnIsResolved = true
         for rowIndex in 0..<field.size.rows {
-            if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] > 0 {
-                columnIsResolver = false
+            if let layerColorId = layerColorId {
+                let index = colors.firstIndex { $0.id == layerColorId }! + 1
+                if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] == index {
+                    columnIsResolved = false
+                }
+            } else if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] > 0 {
+                columnIsResolved = false
             }
         }
-        if columnIsResolver {
+        if columnIsResolved {
             for rowIndex in 0..<field.size.rows {
                 if field.points[rowIndex][column] == .undefined {
                     field.points[rowIndex][column] = .empty
@@ -296,6 +306,10 @@ class ResolvingViewController: UIViewController {
 
             for (rowIndex, row) in sourceField.points.enumerated() {
                 for (columnIndex, point) in row.enumerated() {
+                    if field.horizintals[rowIndex].isEmpty || field.verticals[columnIndex].isEmpty {
+                        field.points[rowIndex][columnIndex] = .empty
+                        continue
+                    }
                     if case .color(let c) = point.value {
                         if c.id == penColor.id {
                             field.points[rowIndex][columnIndex] = point
@@ -479,9 +493,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
 
             if let layerId = layerColorId {
                 layers[layerId] = field
-            } else {
-                checkRownAndColumn(row: row, column: column)
             }
+            checkRownAndColumn(row: row, column: column)
 
             applyState()
 
