@@ -92,6 +92,7 @@
 				A28183632975A2DE00104A3E /* ListViewController.swift */,
 				A2B7FD36297C15FB00A682B9 /* SolutionView.swift */,
 				A2F65D64297D6E98008B1C23 /* CrosswordLoader.swift */,
+				A293B3022986D8A000480EB9 /* FieldView.swift */,
 			);
 			path = nonogram;
 			sourceTree = "<group>";
@@ -178,6 +179,7 @@
 				A2C6591C2970633700FE29B7 /* ControlsPanelView.swift in Sources */,
 				A25E8307296FFEEE00CAC48D /* ViewController.swift in Sources */,
 				A2C659272971336D00FE29B7 /* NumbersView.swift in Sources */,
+				A293B3032986D8A000480EB9 /* FieldView.swift in Sources */,
 				A28183642975A2DE00104A3E /* ListViewController.swift in Sources */,
 				A2C6591E2970635900FE29B7 /* CellView.swift in Sources */,
 				A25E8303296FFEEE00CAC48D /* AppDelegate.swift in Sources */,

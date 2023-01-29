@@ -246,7 +246,7 @@ class NumbersView: CellView {
 
     private let cv = ContentView()
 
-    override init(frame: CGRect) {
+    init(frame: CGRect, panView: UIView) {
         super.init(frame: frame)
         cv.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(cv)
@@ -261,7 +261,8 @@ class NumbersView: CellView {
         ])
 
         let longPressPanGR = LongPressPanGR(target: self, action: #selector(longPressPan(_:)))
-        addGestureRecognizer(longPressPanGR)
+        longPressPanGR.longPressPanView = self
+        panView.addGestureRecognizer(longPressPanGR)
     }
 
     required init?(coder: NSCoder) {
@@ -407,10 +408,12 @@ class NumbersView: CellView {
     }
 }
 
-class LongPressPanGR: UIGestureRecognizer {
+private final class LongPressPanGR: UIGestureRecognizer {
     private var timer: Timer?
     private var processingTouch: UITouch?
     private var startPoint: CGPoint?
+
+    weak var longPressPanView: UIView?
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if self.numberOfTouches == 2 {
@@ -419,8 +422,15 @@ class LongPressPanGR: UIGestureRecognizer {
             timer = nil
             return
         }
+        let point = touches.first!.location(in: longPressPanView)
+        guard longPressPanView?.frame.contains(point) ?? true else {
+            state = .failed
+            timer?.invalidate()
+            timer = nil
+            return
+        }
         processingTouch = touches.first
-        startPoint = processingTouch?.location(in: view)
+        startPoint = point
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
             if self.timer != nil {
                 self.timer?.invalidate()
@@ -443,7 +453,7 @@ class LongPressPanGR: UIGestureRecognizer {
             return
         }
 
-        let point = processingTouch.location(in: view)
+        let point = processingTouch.location(in: longPressPanView)
         if state == .possible && point.distance(to: startPoint) < 2 {
             return
         }

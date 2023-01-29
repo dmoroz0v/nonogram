@@ -42,9 +42,7 @@ class ResolvingViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let contentView = CellView()
     private let controlsPanelView = ControlsPanelView()
-    private let horizontalDefsCell = NumbersView()
-    private let verticalDefsCell = NumbersView()
-    private let solutionView = SolutionView()
+    private var fieldView: FieldView!
 
     private var controlsPanelViewHotizontal: NSLayoutConstraint?
     private var controlsPanelViewVertical: NSLayoutConstraint?
@@ -124,52 +122,23 @@ class ResolvingViewController: UIViewController {
 
         let field: Field! = (sourceField ?? field)
 
-        let cellAspectSize: CGFloat = 24
-        let maxHorizintalDefs = field.horizintals.reduce(0) { value, defs in
-            if defs.count > value {
-                return defs.count
-            }
-            return value
-        }
-        let maxVerticalDefs = field.verticals.reduce(0) { value, defs in
-            if defs.count > value {
-                return defs.count
-            }
-            return value
-        }
+        fieldView = FieldView(frame: .zero, field: field)
+        fieldView.translatesAutoresizingMaskIntoConstraints = false
 
-        let leftTopCell = CellView()
-        leftTopCell.translatesAutoresizingMaskIntoConstraints = false
-        contentView.contentView.addSubview(leftTopCell)
-
-        horizontalDefsCell.translatesAutoresizingMaskIntoConstraints = false
-        horizontalDefsCell.delegate = self
-        horizontalDefsCell.cellAspectSize = cellAspectSize
-        horizontalDefsCell.pickColorHandler = { [weak self] color in
+        fieldView.horizontalDefsCell.delegate = self
+        fieldView.horizontalDefsCell.pickColorHandler = { [weak self] color in
             self?.update(with: .selectPen(pen: .color(color)))
         }
-        horizontalDefsCell.defs = field.horizintals
-        horizontalDefsCell.offset = maxHorizintalDefs
-        horizontalDefsCell.axis = .horizontal
-        contentView.contentView.addSubview(horizontalDefsCell)
 
-        verticalDefsCell.translatesAutoresizingMaskIntoConstraints = false
-        verticalDefsCell.delegate = self
-        verticalDefsCell.cellAspectSize = cellAspectSize
-        verticalDefsCell.pickColorHandler = { [weak self] color in
+        fieldView.verticalDefsCell.delegate = self
+        fieldView.verticalDefsCell.pickColorHandler = { [weak self] color in
             self?.update(with: .selectPen(pen: .color(color)))
         }
-        verticalDefsCell.defs = field.verticals
-        verticalDefsCell.offset = maxVerticalDefs
-        verticalDefsCell.axis = .vertical
-        contentView.contentView.addSubview(verticalDefsCell)
 
-        solutionView.translatesAutoresizingMaskIntoConstraints = false
-        solutionView.size = field.size
-        solutionView.cellAspectSize = cellAspectSize
-        solutionView.delegate = self
-        solutionView.dataSource = self
-        contentView.contentView.addSubview(solutionView)
+        fieldView.solutionView.delegate = self
+        fieldView.solutionView.dataSource = self
+
+        contentView.contentView.addSubview(fieldView)
 
         controlsPanelView.translatesAutoresizingMaskIntoConstraints = false
         controlsPanelView.colors = field.colors
@@ -192,30 +161,11 @@ class ResolvingViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.widthAnchor.constraint(
-                equalToConstant: CGFloat(maxHorizintalDefs + field.size.columns) * cellAspectSize),
-            contentView.heightAnchor.constraint(
-                equalToConstant: CGFloat(maxVerticalDefs + field.size.rows) * cellAspectSize),
 
-            leftTopCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
-            leftTopCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
-            leftTopCell.widthAnchor.constraint(equalToConstant: CGFloat(maxHorizintalDefs) * cellAspectSize),
-            leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(maxVerticalDefs) * cellAspectSize),
-
-            horizontalDefsCell.topAnchor.constraint(equalTo: leftTopCell.bottomAnchor),
-            horizontalDefsCell.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
-            horizontalDefsCell.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
-            horizontalDefsCell.widthAnchor.constraint(equalToConstant: CGFloat(maxHorizintalDefs) * cellAspectSize),
-
-            verticalDefsCell.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
-            verticalDefsCell.leadingAnchor.constraint(equalTo: leftTopCell.trailingAnchor),
-            verticalDefsCell.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
-            verticalDefsCell.heightAnchor.constraint(equalToConstant: CGFloat(maxVerticalDefs) * cellAspectSize),
-
-            solutionView.topAnchor.constraint(equalTo: verticalDefsCell.bottomAnchor),
-            solutionView.leadingAnchor.constraint(equalTo: horizontalDefsCell.trailingAnchor),
-            solutionView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
-            solutionView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
+            fieldView.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
+            fieldView.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
+            fieldView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
+            fieldView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
 
             {
                 controlsPanelViewHotizontal = controlsPanelView.trailingAnchor.constraint(
@@ -374,11 +324,11 @@ class ResolvingViewController: UIViewController {
     }
 
     func applyState() {
-        solutionView.setNeedsDisplay()
-        horizontalDefsCell.defs = field.horizintals
-        horizontalDefsCell.setNeedsDisplay()
-        verticalDefsCell.defs = field.verticals
-        verticalDefsCell.setNeedsDisplay()
+        fieldView.solutionView.setNeedsDisplay()
+        fieldView.horizontalDefsCell.defs = field.horizintals
+        fieldView.horizontalDefsCell.setNeedsDisplay()
+        fieldView.verticalDefsCell.defs = field.verticals
+        fieldView.verticalDefsCell.setNeedsDisplay()
 
         if layerColorId == nil {
             controlsPanelView.showCommon()
@@ -462,8 +412,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
     }
 
     func solutionView(_ solutionView: SolutionView, didLongTapColumn column: Int, row: Int) {
-        horizontalDefsCell.focusedIndex = row
-        verticalDefsCell.focusedIndex = column
+        fieldView.horizontalDefsCell.focusedIndex = row
+        fieldView.verticalDefsCell.focusedIndex = column
         solutionView.focusedCell = (row: row, column: column)
     }
 
@@ -503,8 +453,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
         if validValue == newValue {
             field.points[row][column] = newValue
 
-            horizontalDefsCell.focusedIndex = row
-            verticalDefsCell.focusedIndex = column
+            fieldView.horizontalDefsCell.focusedIndex = row
+            fieldView.verticalDefsCell.focusedIndex = column
             solutionView.focusedCell = (row: row, column: column)
 
             if let layerId = layerColorId {
