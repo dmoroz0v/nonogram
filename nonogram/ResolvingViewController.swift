@@ -112,6 +112,7 @@ class ResolvingViewController: UIViewController {
         super.viewDidLoad()
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
         scrollView.maximumZoomScale = 5
         scrollView.delegate = self
         view.addSubview(scrollView)
@@ -436,7 +437,7 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
         solutionView.focusedCell = (row: row, column: column)
     }
 
-    func solutionView(_ solutionView: SolutionView, didTapColumn column: Int, row: Int) -> Bool {
+    func solutionView(_ solutionView: SolutionView, didTouchColumn column: Int, row: Int) -> Bool {
         if field.points[row][column] != .undefined {
             return true
         }

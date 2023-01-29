@@ -409,9 +409,19 @@ class NumbersView: CellView {
 
 class LongPressPanGR: UIGestureRecognizer {
     private var timer: Timer?
+    private var processingTouch: UITouch?
+    private var startPoint: CGPoint?
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+        if self.numberOfTouches == 2 {
+            state = .failed
+            timer?.invalidate()
+            timer = nil
+            return
+        }
+        processingTouch = touches.first
+        startPoint = processingTouch?.location(in: view)
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
             if self.timer != nil {
                 self.timer?.invalidate()
                 self.timer = nil
@@ -424,10 +434,21 @@ class LongPressPanGR: UIGestureRecognizer {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard state != .possible else {
+        guard let processingTouch = processingTouch,
+              touches.contains(processingTouch),
+              let startPoint = startPoint else {
+            state = .failed
+            timer?.invalidate()
+            timer = nil
             return
         }
-        if state == .began {
+
+        let point = processingTouch.location(in: view)
+        if state == .possible && point.distance(to: startPoint) < 2 {
+            return
+        }
+
+        if state == .began || state == .changed {
             state = .changed
         } else {
             timer?.invalidate()
@@ -449,5 +470,11 @@ class LongPressPanGR: UIGestureRecognizer {
         }
         timer?.invalidate()
         timer = nil
+    }
+}
+
+private extension CGPoint {
+    func distance(to point: CGPoint) -> CGFloat {
+        return sqrt(pow((point.x - x), 2) + pow((point.y - y), 2))
     }
 }

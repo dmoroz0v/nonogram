@@ -7,9 +7,10 @@
 
 import Foundation
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
 
 protocol SolutionViewDelegate: AnyObject {
-    func solutionView(_: SolutionView, didTapColumn: Int, row: Int) -> Bool
+    func solutionView(_: SolutionView, didTouchColumn: Int, row: Int) -> Bool
     func solutionView(_: SolutionView, didLongTapColumn: Int, row: Int)
 }
 
@@ -173,9 +174,8 @@ class SolutionView: CellView {
         let tapGR = UITapGestureRecognizer(target: self, action: #selector(tap(_:)))
         addGestureRecognizer(tapGR)
 
-        //выключено пока так как конфликт со scrollview
-        //let panGR = UIPanGestureRecognizer(target: self, action: #selector(pan(_:)))
-        //addGestureRecognizer(panGR)
+        let panGR = PanGR(target: self, action: #selector(pan(_:)))
+        addGestureRecognizer(panGR)
 
         let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
         addGestureRecognizer(longtapGR)
@@ -219,40 +219,90 @@ class SolutionView: CellView {
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
         _ = delegate?.solutionView(self,
-                                   didTapColumn: Int(location.x / cellAspectSize),
+                                   didTouchColumn: Int(location.x / cellAspectSize),
                                    row: Int(location.y / cellAspectSize))
     }
 
     private var lastPoint: (row: Int, column: Int)?
     private var stopped = false
-    private var startLocation: CGPoint = .zero
+    private var direction: Direction?
+    private enum Direction {
+        case up, down, left, right
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        startLocation = touches.first!.location(in: self)
+        var delta: (dRow: Int, dColumn: Int) {
+            switch self {
+            case .up: return (dRow: -1, dColumn: 0)
+            case .down: return (dRow: 1, dColumn: 0)
+            case .left: return (dRow: 0, dColumn: -1)
+            case .right: return (dRow: 0, dColumn: 1)
+            }
+        }
     }
 
-    @objc private func pan(_ panGR: UIPanGestureRecognizer) {
+    @objc private func pan(_ panGR: PanGR) {
         switch panGR.state {
         case .possible:
             break
         case .began:
-            let newPoint = (row: Int(startLocation.y / cellAspectSize), column: Int(startLocation.x / cellAspectSize))
+            let newPoint = (
+                row: Int(panGR.startPoint!.y / cellAspectSize),
+                column: Int((panGR.startPoint!.x / cellAspectSize))
+            )
             lastPoint = newPoint
-            stopped = (delegate?.solutionView(self, didTapColumn: newPoint.column, row: newPoint.row)) ?? true
+            stopped = (delegate?.solutionView(self, didTouchColumn: newPoint.column, row: newPoint.row)) ?? true
             fallthrough
         case .changed:
             if stopped {
                 return
             }
             let location = panGR.location(in: self)
-            let newPoint = (row: Int(location.y / cellAspectSize), column: Int(location.x / cellAspectSize))
-            if lastPoint?.column != newPoint.column || lastPoint?.row != newPoint.row {
-                lastPoint = newPoint
-                stopped = (delegate?.solutionView(self, didTapColumn: newPoint.column, row: newPoint.row)) ?? true
+            let nextPoint = (
+                row: Int(location.y / cellAspectSize),
+                column: Int(location.x / cellAspectSize)
+            )
+            var newDirection: Direction?
+            if nextPoint.column > lastPoint!.column {
+                newDirection = .right
+            } else if nextPoint.column < lastPoint!.column {
+                newDirection = .left
+            } else if nextPoint.row > lastPoint!.row {
+                newDirection = .down
+            } else if nextPoint.row < lastPoint!.row {
+                newDirection = .up
+            }
+
+            if self.direction == nil {
+                self.direction = newDirection
+            }
+
+            guard let direction = self.direction, direction == newDirection else {
+                return
+            }
+
+            if self.direction != direction {
+                return
+            }
+            let delta = direction.delta
+            var point = lastPoint!
+            while point != nextPoint {
+                point.row += delta.dRow
+                point.column += delta.dColumn
+                if point.column < 0 || point.row < 0 ||
+                    point.row >= size.rows || point.column >= size.columns {
+                    stopped = true
+                    break
+                } else {
+                    stopped = (delegate?.solutionView(
+                        self,
+                        didTouchColumn: point.column,
+                        row: point.row)) ?? true
+                    lastPoint = point
+                }
             }
         case .ended, .cancelled, .failed:
             lastPoint = nil
             stopped = false
+            direction = nil
             break
         @unknown default:
             break
@@ -264,5 +314,59 @@ class SolutionView: CellView {
         delegate?.solutionView(self,
                                didLongTapColumn: Int(location.x / cellAspectSize),
                                row: Int(location.y / cellAspectSize))
+    }
+}
+
+class PanGR: UIGestureRecognizer {
+    private var processingTouch: UITouch?
+    private(set) var startPoint: CGPoint?
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if self.numberOfTouches == 2 {
+            state = .failed
+            return
+        }
+        processingTouch = touches.first
+        startPoint = processingTouch?.location(in: view)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let processingTouch = processingTouch,
+              touches.contains(processingTouch),
+              let startPoint = startPoint else {
+            state = .failed
+            return
+        }
+
+        let point = processingTouch.location(in: view)
+        if state == .possible && point.distance(to: startPoint) < 2 {
+            return
+        }
+
+        if state == .possible {
+            state = .began
+        } else if state == .began || state == .changed {
+            state = .changed
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if state == .began || state == .changed {
+            state = .ended
+        }
+        startPoint = nil
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if state == .began || state == .changed {
+            state = .cancelled
+        }
+        startPoint = nil
+    }
+}
+
+private extension CGPoint {
+    func distance(to point: CGPoint) -> CGFloat {
+        return sqrt(pow((point.x - x), 2) + pow((point.y - y), 2))
     }
 }
