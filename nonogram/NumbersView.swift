@@ -423,7 +423,7 @@ private final class LongPressPanGR: UIGestureRecognizer {
             return
         }
         let point = touches.first!.location(in: longPressPanView)
-        guard longPressPanView?.frame.contains(point) ?? true else {
+        guard longPressPanView?.bounds.contains(point) ?? true else {
             state = .failed
             timer?.invalidate()
             timer = nil
