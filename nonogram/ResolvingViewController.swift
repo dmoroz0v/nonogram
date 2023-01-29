@@ -33,7 +33,7 @@ class ResolvingViewController: UIViewController {
     enum UpdateAction {
         case selectLayer(penColor: Field.Color)
         case selectPen(pen: Pen)
-        case closeAndSelectPen(pen: Pen)
+        case closeLayerAndSelectPen(pen: Pen)
     }
 
     weak var delegate: ResolvingViewControllerDelegate?
@@ -232,7 +232,7 @@ class ResolvingViewController: UIViewController {
         applyState()
     }
 
-    func checkRownAndColumn(row: Int, column: Int) {
+    func strikeEmptyCellsIfResolved(row: Int) {
         var rowIsResolved = true
         for columnIndex in 0..<field.size.columns {
             if let layerColorId = layerColorId {
@@ -251,7 +251,9 @@ class ResolvingViewController: UIViewController {
                 }
             }
         }
+    }
 
+    func strikeEmptyCellsIfResolved(column: Int) {
         var columnIsResolved = true
         for rowIndex in 0..<field.size.rows {
             if let layerColorId = layerColorId {
@@ -273,7 +275,6 @@ class ResolvingViewController: UIViewController {
     }
 
     func update(with action: UpdateAction) {
-
         switch action {
         case .selectLayer(let penColor):
             self.pen = .layer(penColor)
@@ -324,7 +325,14 @@ class ResolvingViewController: UIViewController {
             }
 
             layerColorId = penColor.id
-        case .closeAndSelectPen(let pen):
+
+            for rowIndex in 0..<field.size.rows {
+                strikeEmptyCellsIfResolved(row: rowIndex)
+            }
+            for columnIndex in 0..<field.size.columns {
+                strikeEmptyCellsIfResolved(column: columnIndex)
+            }
+        case .closeLayerAndSelectPen(let pen):
             self.pen = pen
 
             layers[layerColorId!] = field
@@ -340,6 +348,14 @@ class ResolvingViewController: UIViewController {
             }
 
             layerColorId = nil
+
+            for rowIndex in 0..<field.size.rows {
+                strikeEmptyCellsIfResolved(row: rowIndex)
+            }
+            for columnIndex in 0..<field.size.columns {
+                strikeEmptyCellsIfResolved(column: columnIndex)
+            }
+
         case .selectPen(let pen):
             self.pen = pen
         }
@@ -421,9 +437,9 @@ extension ResolvingViewController: ControlsPanelViewDelegate {
 
     func controlsPanelViewDidCloseLayer(_: ControlsPanelView) {
         if case .layer(let c) = pen {
-            update(with: .closeAndSelectPen(pen: .color(c)))
+            update(with: .closeLayerAndSelectPen(pen: .color(c)))
         } else {
-            update(with: .closeAndSelectPen(pen: .empty))
+            update(with: .closeLayerAndSelectPen(pen: .empty))
         }
     }
 
@@ -494,7 +510,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             if let layerId = layerColorId {
                 layers[layerId] = field
             }
-            checkRownAndColumn(row: row, column: column)
+            strikeEmptyCellsIfResolved(row: row)
+            strikeEmptyCellsIfResolved(column: column)
 
             applyState()
 
