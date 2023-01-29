@@ -134,14 +134,26 @@ final class FieldView: UIView, PanGRDelegate {
                 column: Int(location.x / cellAspectSize)
             )
             var newDirection: Direction?
-            if nextPoint.column > lastPoint!.column {
-                newDirection = .right
-            } else if nextPoint.column < lastPoint!.column {
-                newDirection = .left
-            } else if nextPoint.row > lastPoint!.row {
-                newDirection = .down
-            } else if nextPoint.row < lastPoint!.row {
-                newDirection = .up
+            var delta = (
+                horizontal: nextPoint.column - lastPoint!.column,
+                vertical: nextPoint.row - lastPoint!.row
+            )
+            if abs(delta.horizontal) > abs(delta.vertical) {
+                if delta.horizontal != 0 {
+                    if delta.horizontal < 0 {
+                        newDirection = .left
+                    } else {
+                        newDirection = .right
+                    }
+                }
+            } else {
+                if delta.vertical != 0 {
+                    if delta.vertical < 0 {
+                        newDirection = .up
+                    } else {
+                        newDirection = .down
+                    }
+                }
             }
 
             if self.direction == nil {
@@ -155,11 +167,11 @@ final class FieldView: UIView, PanGRDelegate {
             if self.direction != direction {
                 return
             }
-            let delta = direction.delta
+            let step = direction.delta
             var point = lastPoint!
             while point != nextPoint {
-                point.row += delta.dRow
-                point.column += delta.dColumn
+                point.row += step.dRow
+                point.column += step.dColumn
                 if point.column < 0 || point.row < 0 ||
                     point.row >= size.rows || point.column >= size.columns {
                     stopped = true
@@ -169,6 +181,9 @@ final class FieldView: UIView, PanGRDelegate {
                         solutionView,
                         didTouchColumn: point.column,
                         row: point.row)) ?? true
+                    if stopped {
+                        break
+                    }
                     lastPoint = point
                 }
             }
