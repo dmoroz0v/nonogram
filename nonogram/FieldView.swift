@@ -134,7 +134,7 @@ final class FieldView: UIView, PanGRDelegate {
                 column: Int(location.x / cellAspectSize)
             )
             var newDirection: Direction?
-            var delta = (
+            let delta = (
                 horizontal: nextPoint.column - lastPoint!.column,
                 vertical: nextPoint.row - lastPoint!.row
             )
