@@ -20,7 +20,7 @@ struct Item {
     var image: UIImage?
 }
 
-class PageButtonsView: UIView {
+final class PageButtonsView: UIView {
     let prevPageButton = UIButton()
     let nextPageButton = UIButton()
     override init(frame: CGRect) {
@@ -56,7 +56,7 @@ class PageButtonsView: UIView {
     }
 }
 
-class ListLoader {
+final class ListLoader {
     private let url = "https://www.nonograms.ru/nonograms2/p/"
     private var isLoading = false
 
@@ -128,20 +128,87 @@ class ListLoader {
     }
 }
 
-class ListViewController: UIViewController {
+final class ListViewController: UIViewController {
 
     weak var delegate: ListViewControllerDelegate?
 
-    let textField = UITextField()
-    let loadButton = UIButton()
-    let continueButton = UIButton()
+    private let textField = UITextField()
+    private let loadButton = UIButton()
+    private let continueButton = UIButton()
+    private let stackView = UIStackView()
 
-    let listLoader = ListLoader()
+    private let listLoader = ListLoader()
 
     private var currentPage = 1
     private var items: [Item] = []
 
-    let pageButtonsView = PageButtonsView()
+    private let pageButtonsView = PageButtonsView()
+    private let activityIndicator = UIActivityIndicatorView(style: .large)
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(stackView)
+
+        pageButtonsView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pageButtonsView)
+        pageButtonsView.prevPageButton.addTarget(self, action: #selector(prevPage), for: .touchDown)
+        pageButtonsView.nextPageButton.addTarget(self, action: #selector(nextPage), for: .touchDown)
+
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.hidesWhenStopped = true
+        view.addSubview(activityIndicator)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: pageButtonsView.topAnchor),
+
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            scrollView.widthAnchor.constraint(equalTo: stackView.widthAnchor),
+
+            pageButtonsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pageButtonsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pageButtonsView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ])
+
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self,
+                                       selector:#selector(appMovedToForeground),
+                                       name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        loadCurrentPage()
+    }
+
+    @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
+        let index = tapGR.view?.tag ?? 0
+        let url = items[index].url
+        delegate?.listViewController(self, selectWithUrl: url)
+    }
+
+    @objc private func prevPage() {
+        currentPage -= 1
+        loadCurrentPage()
+    }
+
+    @objc private func nextPage() {
+        currentPage += 1
+        loadCurrentPage()
+    }
 
     @objc private func appMovedToForeground() {
         loadCurrentPage()
@@ -169,78 +236,33 @@ class ListViewController: UIViewController {
         pageButtonsView.prevPageButton.isEnabled = currentPage > 1
     }
 
-    let stackView = UIStackView()
-
     private func loadCurrentPage() {
+        activityIndicator.startAnimating()
+        view.isUserInteractionEnabled = false
+        view.alpha = 0.5
         listLoader.loadPage(currentPage) { items in
+            self.view.isUserInteractionEnabled = true
+            self.activityIndicator.stopAnimating()
+            self.view.alpha = 1
             if let items = items {
                 self.show(items: items)
             } else {
-                self.loadCurrentPage()
+                self.showErrorAlert()
             }
         }
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-
-        let scrollView = UIScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(scrollView)
-        scrollView.addSubview(stackView)
-
-        pageButtonsView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(pageButtonsView)
-        pageButtonsView.prevPageButton.addTarget(self, action: #selector(prevPage), for: .touchDown)
-        pageButtonsView.nextPageButton.addTarget(self, action: #selector(nextPage), for: .touchDown)
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: pageButtonsView.topAnchor),
-
-            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            scrollView.widthAnchor.constraint(equalTo: stackView.widthAnchor),
-
-            pageButtonsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            pageButtonsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            pageButtonsView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
-
-        let notificationCenter = NotificationCenter.default
-        notificationCenter.addObserver(self,
-                                       selector:#selector(appMovedToForeground),
-                                       name: UIApplication.willEnterForegroundNotification, object: nil)
-
-        loadCurrentPage()
-    }
-
-    @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
-        let index = tapGR.view?.tag ?? 0
-        let url = items[index].url
-        delegate?.listViewController(self, selectWithUrl: url)
-    }
-
-    @objc private func prevPage() {
-        currentPage -= 1
-        loadCurrentPage()
-    }
-
-    @objc private func nextPage() {
-        currentPage += 1
-        loadCurrentPage()
+    private func showErrorAlert() {
+        let alert = UIAlertController(title: nil, message: "Ошибка", preferredStyle: .alert)
+        alert.popoverPresentationController?.sourceView = view
+        alert.addAction(.init(title: "Повторить", style: .default, handler: { _ in
+            self.loadCurrentPage()
+        }))
+        present(alert, animated: true)
     }
 }
 
-class ItemView: UIView {
+final class ItemView: UIView {
     let imageView = UIImageView()
     let nameLabel = UILabel()
 

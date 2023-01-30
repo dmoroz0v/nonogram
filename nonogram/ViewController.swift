@@ -30,6 +30,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
 
     let crosswordLoader = CrosswordLoader()
 
+    private let activityIndicator = UIActivityIndicatorView(style: .large)
+
     func listViewController(_: ListViewController, selectWithUrl url: URL) {
         if let data = storage.load(key: url.absoluteString) {
             let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
@@ -61,8 +63,16 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
     }
 
     func loadCrossword(url: URL) {
+        view.bringSubviewToFront(activityIndicator)
+        activityIndicator.startAnimating()
+        view.isUserInteractionEnabled = false
+        view.alpha = 0.5
         crosswordLoader.load(url: url) { horizontalDefs, verticalDefs, solution, colors in
             DispatchQueue.main.async {
+                self.activityIndicator.stopAnimating()
+                self.view.isUserInteractionEnabled = true
+                self.view.alpha = 1
+
                 let resolvingViewController = ResolvingViewController(
                     url: url,
                     horizontalDefs: horizontalDefs,
@@ -76,6 +86,11 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
                 self.showVC(resolvingViewController)
             }
         } failure: {
+            DispatchQueue.main.async {
+                self.activityIndicator.stopAnimating()
+                self.view.isUserInteractionEnabled = true
+                self.view.alpha = 1
+            }
         }
     }
 
@@ -114,6 +129,14 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         listVC.delegate = self
 
         showVC(listVC)
+
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.hidesWhenStopped = true
+        view.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ])
     }
 
     func showVC(_ vc: UIViewController) {
