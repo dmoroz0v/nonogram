@@ -14,6 +14,7 @@
 		A25E830C296FFEEE00CAC48D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A25E830B296FFEEE00CAC48D /* Assets.xcassets */; };
 		A25E830F296FFEEE00CAC48D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */; };
 		A28183642975A2DE00104A3E /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28183632975A2DE00104A3E /* ListViewController.swift */; };
+		A293B3032986D8A000480EB9 /* FieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A293B3022986D8A000480EB9 /* FieldView.swift */; };
 		A2B7FD37297C15FB00A682B9 /* SolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B7FD36297C15FB00A682B9 /* SolutionView.swift */; };
 		A2C6591C2970633700FE29B7 /* ControlsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */; };
 		A2C6591E2970635900FE29B7 /* CellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591D2970635900FE29B7 /* CellView.swift */; };
@@ -35,6 +36,7 @@
 		A25E830E296FFEEE00CAC48D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A25E8310296FFEEE00CAC48D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A28183632975A2DE00104A3E /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
+		A293B3022986D8A000480EB9 /* FieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldView.swift; sourceTree = "<group>"; };
 		A2B7FD36297C15FB00A682B9 /* SolutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolutionView.swift; sourceTree = "<group>"; };
 		A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsPanelView.swift; sourceTree = "<group>"; };
 		A2C6591D2970635900FE29B7 /* CellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellView.swift; sourceTree = "<group>"; };
