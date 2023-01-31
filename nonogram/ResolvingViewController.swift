@@ -59,7 +59,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         didSet {
             prevPens.append(oldValue)
             if prevPens.count == 11 {
-                prevPens = Array(prevPens.dropLast(1))
+                prevPens = Array(prevPens.dropFirst(1))
             }
             controlsPanelView.pen = pen
         }
