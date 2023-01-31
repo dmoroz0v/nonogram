@@ -454,7 +454,7 @@ private final class LongPressPanGR: UIGestureRecognizer {
         }
 
         let point = processingTouch.location(in: longPressPanView)
-        if state == .possible && point.distance(to: startPoint) < 2 {
+        if state == .possible && point.distance(to: startPoint) < 6 {
             return
         }
 

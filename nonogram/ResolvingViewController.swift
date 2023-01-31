@@ -28,7 +28,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
-class ResolvingViewController: UIViewController {
+class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
     enum UpdateAction {
         case selectLayer(penColor: Field.Color)
@@ -54,8 +54,13 @@ class ResolvingViewController: UIViewController {
     private var sourceField: Field!
     private var layers: [String: Field] = [:]
     private var layerColorId: String?
+    private var prevPens: [Pen] = []
     private var pen: Pen = .empty {
         didSet {
+            prevPens.append(oldValue)
+            if prevPens.count == 11 {
+                prevPens = Array(prevPens.dropLast(1))
+            }
             controlsPanelView.pen = pen
         }
     }
@@ -178,6 +183,10 @@ class ResolvingViewController: UIViewController {
                 return controlsPanelViewVertical!
             }(),
         ])
+
+        let pencilInteraction = UIPencilInteraction()
+        pencilInteraction.delegate = self
+        view.addInteraction(pencilInteraction)
 
         applyState()
     }
@@ -355,6 +364,32 @@ class ResolvingViewController: UIViewController {
             controlsPanelViewPanPrevLocation = nil
         @unknown default:
             break
+        }
+    }
+
+    func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+        switch pen {
+        case .empty:
+            if let layerColorId {
+                pen = .layer(colors.first(where: { $0.id == layerColorId })!)
+            } else {
+                let prevDoloredPen = prevPens.reversed().first { prevPen in
+                    switch prevPen {
+                    case .empty: return false
+                    case .color, .layer: return true
+                    }
+                }
+                switch prevDoloredPen {
+                case .empty, .none:
+                    pen = .color(colors.first!)
+                case .color(let c):
+                    pen = .color(c)
+                case .layer(let c):
+                    pen = .color(c)
+                }
+            }
+        case .color, .layer:
+            pen = .empty
         }
     }
 

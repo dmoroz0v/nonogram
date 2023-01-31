@@ -7,6 +7,23 @@
 
 import Foundation
 
+extension String {
+    public func matching(_ pattern: String, options: NSRegularExpression.Options = []) -> [String] {
+        guard let regEx = try? NSRegularExpression(pattern: pattern, options: options) else {
+            return []
+        }
+
+        return regEx.matches(in: self, range: NSRange(location: 0, length: count)).map { match in
+            guard let range = Range(match.range) else {
+                return ""
+            }
+            let startIndex = index(self.startIndex, offsetBy: range.startIndex)
+            let endIndex = index(self.startIndex, offsetBy: range.endIndex)
+            return String(self[startIndex..<endIndex])
+        }
+    }
+}
+
 class CrosswordLoader {
     func load(url: URL, completion: @escaping (_ horizontalDefs: [[Field.Definition]],
                                                _ verticalDefs: [[Field.Definition]],

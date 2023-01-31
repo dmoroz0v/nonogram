@@ -249,7 +249,7 @@ private final class PanGR: UIGestureRecognizer {
         }
 
         let point = processingTouch.location(in: panGRView)
-        if state == .possible && point.distance(to: startPoint) < 2 {
+        if state == .possible && point.distance(to: startPoint) < 6 {
             return
         }
 
