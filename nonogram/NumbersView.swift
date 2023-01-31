@@ -71,16 +71,16 @@ class NumbersView: CellView {
                         ctx.stroke(rectangle)
                     }
 
-                    rectangle.origin.y += 4
+                    rectangle.origin.y += 0.16 * cellAspectSize
                     let paragraphStyle = NSMutableParagraphStyle()
                     paragraphStyle.alignment = .center
-                    var font = UIFont.systemFont(ofSize: 14)
+                    var font = UIFont.systemFont(ofSize: 0.58 * cellAspectSize)
                     if let startSelectedDef = numbersView.startSelectedDef {
                         let endSelectedDef = (numbersView.endSelectedDef ?? numbersView.startSelectedDef)!
                         let minColumn = min(startSelectedDef.column, endSelectedDef.column) - space
                         let maxColumn = max(startSelectedDef.column, endSelectedDef.column) - space
                         if defsIndex == startSelectedDef.row && defIndex >= minColumn && defIndex <= maxColumn {
-                            font = UIFont.systemFont(ofSize: 15, weight: .heavy)
+                            font = UIFont.systemFont(ofSize: 0.62 * cellAspectSize, weight: .heavy)
                             rectangle.origin.y -= 1
                         }
                     }
@@ -385,20 +385,20 @@ class NumbersView: CellView {
         if sumLabelView.superview == nil {
             cv.addSubview(sumLabelView)
         }
-        sumLabelView.frame.size = CGSize(width: cellAspectSize, height: cellAspectSize)
-        sumLabel.frame.size = CGSize(width: cellAspectSize, height: cellAspectSize)
+        sumLabelView.frame.size = CGSize(width: 24, height: 24)
+        sumLabel.frame.size = CGSize(width: 24, height: 24)
         sumLabel.text = "\(n)"
 
         switch axis {
         case .horizontal:
             sumLabelView.center = CGPoint(
-                x: cellAspectSize * CGFloat(maxColumn + minColumn) / 2 + cellAspectSize/2,
-                y: CGFloat(startSelectedDef.row) * cellAspectSize - cellAspectSize / 2
+                x: cellAspectSize * CGFloat(maxColumn + minColumn + 1) / 2,
+                y: CGFloat(startSelectedDef.row) * cellAspectSize - 24/2
             )
         case .vertical:
             sumLabelView.center = CGPoint(
-                x: CGFloat(startSelectedDef.row) * cellAspectSize - cellAspectSize / 2,
-                y: cellAspectSize * CGFloat(maxColumn + minColumn) / 2 + cellAspectSize/2
+                x: CGFloat(startSelectedDef.row) * cellAspectSize - 24 / 2,
+                y: cellAspectSize * CGFloat(maxColumn + minColumn + 1) / 2
             )
         @unknown default:
             break

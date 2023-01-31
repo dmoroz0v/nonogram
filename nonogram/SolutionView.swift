@@ -60,10 +60,10 @@ class SolutionView: CellView {
                     case .empty:
                         ctx.setFillColor(UIColor.black.cgColor)
                         let circleRect: CGRect = CGRect(
-                            x: solutionView.cellAspectSize * CGFloat(columnIndex) + solutionView.cellAspectSize/2 - 2,
-                            y: solutionView.cellAspectSize * CGFloat(rowIndex) + solutionView.cellAspectSize/2 - 2,
-                            width: 4,
-                            height: 4
+                            x: solutionView.cellAspectSize * CGFloat(columnIndex) + solutionView.cellAspectSize/2 - 0.1 * solutionView.cellAspectSize,
+                            y: solutionView.cellAspectSize * CGFloat(rowIndex) + solutionView.cellAspectSize/2 - 0.1 * solutionView.cellAspectSize,
+                            width: 0.2 * solutionView.cellAspectSize,
+                            height: 0.2 * solutionView.cellAspectSize
                         )
                         ctx.fillEllipse(in: circleRect)
                         if solutionView.focusedCell?.row == rowIndex,
@@ -91,9 +91,11 @@ class SolutionView: CellView {
         func showError(row: Int, column: Int) {
             let image = UIImage(named: "error")
             let imageView = UIImageView(image: image)
-            imageView.frame.origin = CGPoint(
+            imageView.frame = CGRect(
                 x: CGFloat(column) * solutionView.cellAspectSize,
-                y: CGFloat(row) * solutionView.cellAspectSize
+                y: CGFloat(row) * solutionView.cellAspectSize,
+                width: solutionView.cellAspectSize,
+                height: solutionView.cellAspectSize
             )
             addSubview(imageView)
             imageView.transform = .init(scaleX: 0.8, y: 0.8)

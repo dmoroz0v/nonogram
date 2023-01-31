@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 final class FieldView: UIView, PanGRDelegate {
-    private let cellAspectSize: CGFloat = 24
+    private let cellAspectSize: CGFloat = 15
     private let size: (columns: Int, rows: Int)
 
     private(set) var horizontalDefsCell: NumbersView!
