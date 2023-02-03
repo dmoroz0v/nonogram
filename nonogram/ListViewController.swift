@@ -39,15 +39,15 @@ final class PageButtonsView: UIView {
         addSubview(nextPageButton)
 
         NSLayoutConstraint.activate([
-            prevPageButton.topAnchor.constraint(equalTo: topAnchor),
             prevPageButton.leadingAnchor.constraint(equalTo: leadingAnchor),
-            prevPageButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
             prevPageButton.trailingAnchor.constraint(equalTo: centerXAnchor),
+            prevPageButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            nextPageButton.topAnchor.constraint(equalTo: topAnchor),
             nextPageButton.trailingAnchor.constraint(equalTo: trailingAnchor),
-            nextPageButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
             nextPageButton.leadingAnchor.constraint(equalTo: centerXAnchor),
+            nextPageButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            heightAnchor.constraint(equalToConstant: 64),
         ])
     }
 
@@ -180,7 +180,7 @@ final class ListViewController: UIViewController {
 
             pageButtonsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             pageButtonsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            pageButtonsView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            pageButtonsView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
