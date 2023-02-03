@@ -164,12 +164,15 @@ final class FieldView: UIView, PanGRDelegate {
                 return
             }
 
-            if self.direction != direction {
-                return
-            }
             let step = direction.delta
+            func comparePoint(_ p1: (row: Int, column: Int), to p2: (row: Int, column: Int), direction: Direction) -> Bool {
+                switch direction {
+                case .up, .down: return p1.row == p2.row
+                case .left, .right: return p1.column == p2.column
+                }
+            }
             var point = lastPoint!
-            while point != nextPoint {
+            while !comparePoint(point, to: nextPoint, direction: direction) {
                 point.row += step.dRow
                 point.column += step.dColumn
                 if point.column < 0 || point.row < 0 ||
