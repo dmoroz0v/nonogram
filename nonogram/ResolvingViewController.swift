@@ -65,7 +65,14 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             if prevPens.count == 11 {
                 prevPens = Array(prevPens.dropFirst(1))
             }
-            controlsPanelView.pen = pen
+            switch pen {
+            case .empty:
+                controlsPanelView.item = .empty
+            case .color(let c):
+                controlsPanelView.item = .color(c)
+            case .layer(let c):
+                controlsPanelView.item = .color(c)
+            }
         }
     }
 
@@ -446,8 +453,8 @@ extension ResolvingViewController: ControlsPanelViewDelegate {
         delegate?.resolvingViewControllerDidTapExit(self)
     }
 
-    func controlsPanelViewDidSelctColorForCurrentLayer(_: ControlsPanelView, color: Field.Color) {
-        pen = .layer(color)
+    func controlsPanelView(_: ControlsPanelView, didSelectLayerColor color: Field.Color) {
+        update(with: .selectLayer(penColor: color))
     }
 
     func controlsPanelViewDidCloseLayer(_: ControlsPanelView) {
@@ -462,11 +469,16 @@ extension ResolvingViewController: ControlsPanelViewDelegate {
         return self
     }
 
-    func controlsPanelView(_: ControlsPanelView, didSelectPen pen: Pen) {
-        if case .layer(let penColor) = pen {
-            update(with: .selectLayer(penColor: penColor))
-        } else {
-            update(with: .selectPen(pen: pen))
+    func controlsPanelView(_: ControlsPanelView, didSelectItem item: ControlsPanelView.Item) {
+        switch item {
+        case .empty:
+            update(with: .selectPen(pen: .empty))
+        case .color(let color):
+            if layerColorId != nil {
+                update(with: .selectPen(pen: .layer(color)))
+            } else {
+                update(with: .selectPen(pen: .color(color)))
+            }
         }
     }
 }
