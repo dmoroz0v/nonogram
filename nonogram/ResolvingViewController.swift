@@ -185,8 +185,8 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             fieldView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
 
             {
-                controlsPanelViewHotizontal = controlsPanelView.trailingAnchor.constraint(
-                    equalTo: view.trailingAnchor)
+                controlsPanelViewHotizontal = controlsPanelView.leadingAnchor.constraint(
+                    equalTo: view.safeAreaLayoutGuide.leadingAnchor)
                 return controlsPanelViewHotizontal!
             }(),
             {
@@ -201,6 +201,22 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         view.addInteraction(pencilInteraction)
 
         applyState()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if controlsPanelViewHotizontal!.constant > view.frame.width - controlsPanelView.frame.width {
+            controlsPanelViewHotizontal!.constant = view.frame.width - controlsPanelView.frame.width
+        }
+        if controlsPanelViewHotizontal!.constant < 0 {
+            controlsPanelViewHotizontal!.constant = 0
+        }
+        if controlsPanelViewVertical!.constant > view.frame.height/2 - controlsPanelView.frame.height/2 {
+            controlsPanelViewVertical!.constant = view.frame.height/2 - controlsPanelView.frame.height/2
+        }
+        if controlsPanelViewVertical!.constant < -view.frame.height/2 + controlsPanelView.frame.height/2 {
+            controlsPanelViewVertical!.constant = -view.frame.height/2 + controlsPanelView.frame.height/2
+        }
     }
 
     func strikeEmptyCellsIfResolved(row: Int) {
