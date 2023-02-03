@@ -10,7 +10,13 @@ import UIKit
 import SwiftSoup
 
 protocol ListViewControllerDelegate: AnyObject {
-    func listViewController(_: ListViewController, selectWithUrl: URL)
+    func listViewController(
+        _: ListViewController,
+        selectWithUrl: URL,
+        thumbnail: URL,
+        title: String)
+
+    func listViewControllerLast(_: ListViewController) -> (url: URL, thumbnail: URL, title: String)?
 }
 
 struct Item {
@@ -56,7 +62,12 @@ final class PageButtonsView: UIView {
     }
 }
 
+protocol ListLoaderDelegate: AnyObject {
+    func listLoaderLast(_ :ListLoader) -> (url: URL, thumbnail: URL, title: String)?
+}
+
 final class ListLoader {
+    weak var delegate: ListLoaderDelegate?
     private let url = "https://www.nonograms.ru/nonograms2/p/"
     private var isLoading = false
 
@@ -74,6 +85,10 @@ final class ListLoader {
                     let nonogramList = try doc.select("table.nonogram_list").first()!
 
                     var result: [Item] = []
+
+                    if page == 1, let last = self.delegate?.listLoaderLast(self) {
+                        result.insert(.init(url: last.url, iocnURL: last.thumbnail, name: last.title), at: 0)
+                    }
 
                     for tr in try nonogramList.select("tr") {
                         let nonogramImg = try tr.select("td.nonogram_img").first()
@@ -128,7 +143,7 @@ final class ListLoader {
     }
 }
 
-final class ListViewController: UIViewController {
+final class ListViewController: UIViewController, ListLoaderDelegate {
 
     weak var delegate: ListViewControllerDelegate?
 
@@ -148,6 +163,8 @@ final class ListViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        listLoader.delegate = self
 
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
@@ -196,8 +213,12 @@ final class ListViewController: UIViewController {
 
     @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
         let index = tapGR.view?.tag ?? 0
-        let url = items[index].url
-        delegate?.listViewController(self, selectWithUrl: url)
+        let item = items[index]
+        delegate?.listViewController(
+            self,
+            selectWithUrl: item.url,
+            thumbnail: item.iocnURL,
+            title: item.name)
     }
 
     @objc private func prevPage() {
@@ -261,6 +282,10 @@ final class ListViewController: UIViewController {
             self.loadCurrentPage()
         }))
         present(alert, animated: true)
+    }
+
+    func listLoaderLast(_: ListLoader) -> (url: URL, thumbnail: URL, title: String)? {
+        return delegate?.listViewControllerLast(self)
     }
 }
 

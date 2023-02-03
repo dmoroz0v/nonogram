@@ -22,7 +22,9 @@ protocol ResolvingViewControllerDelegate: AnyObject {
         currentLayer: String?,
         solution: [[Int]],
         colors: [Field.Color],
-        url: URL
+        url: URL,
+        thumbnail thumbnailUrl: URL,
+        title: String
     )
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
@@ -48,6 +50,8 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     private var controlsPanelViewVertical: NSLayoutConstraint?
 
     private let url: URL
+    private let thumbnailUrl: URL
+    private let crosswordTitle: String
     private let solution: [[Int]]
     private let colors: [Field.Color]
     private var field: Field!
@@ -67,12 +71,16 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
     init(
         url: URL,
+        thumbnail thumbnailUrl: URL,
+        title: String,
         horizontalDefs: [[Field.Definition]],
         verticalDefs: [[Field.Definition]],
         solution: [[Int]],
         colors: [Field.Color]
     ) {
         self.url = url
+        self.thumbnailUrl = thumbnailUrl
+        self.crosswordTitle = title
         field = Field(
             points: Array<[Field.Point]>(
                 repeating: Array<Field.Point>(repeating: .undefined, count: verticalDefs.count),
@@ -88,6 +96,8 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
     init(
         url: URL,
+        thumbnail thumbnailUrl: URL,
+        title: String,
         field: Field,
         layers: [String: Field],
         currentLayer: String?,
@@ -95,6 +105,8 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         colors: [Field.Color]
     ) {
         self.url = url
+        self.thumbnailUrl = thumbnailUrl
+        self.crosswordTitle = title
         self.field = field
         self.layers = layers
         self.layerColorId = currentLayer
@@ -328,7 +340,9 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             currentLayer: layerColorId,
             solution: solution,
             colors: colors,
-            url: url
+            url: url,
+            thumbnail: thumbnailUrl,
+            title: crosswordTitle
         )
     }
 
@@ -507,7 +521,9 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
                 currentLayer: layerColorId,
                 solution: solution,
                 colors: colors,
-                url: url
+                url: url,
+                thumbnail: thumbnailUrl,
+                title: crosswordTitle
             )
 
             return false

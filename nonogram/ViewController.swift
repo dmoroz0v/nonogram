@@ -14,16 +14,22 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
     private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
-    func listViewController(_: ListViewController, selectWithUrl url: URL) {
+    func listViewController(
+        _: ListViewController,
+        selectWithUrl url: URL,
+        thumbnail thumbnailUrl: URL,
+        title: String) {
         if let data = storage.load(key: url.absoluteString) {
             let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
             alert.popoverPresentationController?.sourceView = view
             alert.addAction(.init(title: "Новая", style: .default, handler: { _ in
-                self.loadCrossword(url: url)
+                self.loadCrossword(url: url, thumbnail: thumbnailUrl, title: title)
             }))
             alert.addAction(.init(title: "Продолжить", style: .default, handler: { _ in
                 let resolvingViewController = ResolvingViewController(
                     url: url,
+                    thumbnail: thumbnailUrl,
+                    title: title,
                     field: data.field,
                     layers: data.layers,
                     currentLayer: data.currentLayer,
@@ -39,10 +45,18 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
             present(alert, animated: true)
             return
         }
-        loadCrossword(url: url)
+        loadCrossword(url: url, thumbnail: thumbnailUrl, title: title)
     }
 
-    func loadCrossword(url: URL) {
+    func listViewControllerLast(_: ListViewController) -> (url: URL, thumbnail: URL, title: String)? {
+        let data = storage.loadLast()
+        if let data = data {
+            return (url: data.url, thumbnail: data.thumbnail, title: data.title)
+        }
+        return nil
+    }
+
+    func loadCrossword(url: URL, thumbnail thumbnailUrl: URL, title: String) {
         view.bringSubviewToFront(activityIndicator)
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
@@ -55,6 +69,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
 
                 let resolvingViewController = ResolvingViewController(
                     url: url,
+                    thumbnail: thumbnailUrl,
+                    title: title,
                     horizontalDefs: horizontalDefs,
                     verticalDefs: verticalDefs,
                     solution: solution,
@@ -83,10 +99,15 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         currentLayer: String?,
         solution: [[Int]],
         colors: [Field.Color],
-        url: URL
+        url: URL,
+        thumbnail thumbnailUrl: URL,
+        title: String
     ) {
         storage.save(
             key: url.absoluteString,
+            url: url,
+            thumbnail: thumbnailUrl,
+            title: title,
             field: field,
             layers: layers,
             currentLayer: currentLayer,
