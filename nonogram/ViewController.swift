@@ -9,10 +9,9 @@ import UIKit
 
 class ViewController: UIViewController, ResolvingViewControllerDelegate, ListViewControllerDelegate {
 
-    var currentViewController: UIViewController?
-
-    let crosswordLoader = CrosswordLoader()
-
+    private var currentViewController: UIViewController?
+    private lazy var listViewController = ListViewController()
+    private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
     func listViewController(_: ListViewController, selectWithUrl url: URL) {
@@ -36,9 +35,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
 
                 self.showVC(resolvingViewController)
             }))
-            alert.addAction(.init(title: "Отмена", style: .destructive, handler: { _ in
-
-            }))
+            alert.addAction(.init(title: "Отмена", style: .destructive))
             present(alert, animated: true)
             return
         }
@@ -99,19 +96,14 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
-        let listVC = ListViewController()
-        listVC.delegate = self
-
-        showVC(listVC)
+        showVC(listViewController)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let listVC = ListViewController()
-        listVC.delegate = self
-
-        showVC(listVC)
+        listViewController.delegate = self
+        showVC(listViewController)
 
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.hidesWhenStopped = true

@@ -132,6 +132,7 @@ final class ListViewController: UIViewController {
 
     weak var delegate: ListViewControllerDelegate?
 
+    private let scrollView = UIScrollView()
     private let textField = UITextField()
     private let loadButton = UIButton()
     private let continueButton = UIButton()
@@ -151,7 +152,6 @@ final class ListViewController: UIViewController {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
 
-        let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(scrollView)
@@ -232,6 +232,8 @@ final class ListViewController: UIViewController {
             let tapGR = UITapGestureRecognizer(target: self, action: #selector(tapItem(_:)))
             itemView.addGestureRecognizer(tapGR)
         }
+
+        scrollView.contentOffset = .zero
 
         pageButtonsView.prevPageButton.isEnabled = currentPage > 1
     }
