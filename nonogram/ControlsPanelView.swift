@@ -244,7 +244,7 @@ final class ControlsPanelView: UIView {
             var frame = CGRect(origin: .zero, size: preferredContentSize)
             if popoverPresentationController?.arrowDirection == .left {
                 frame.origin.x = view.frame.width - preferredContentSize.width
-            } else if popoverPresentationController?.arrowDirection == .right {
+            } else if popoverPresentationController?.arrowDirection == .up {
                 frame.origin.y = view.frame.height - preferredContentSize.height
             }
             stackView.frame = frame
