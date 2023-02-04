@@ -26,6 +26,8 @@ final class ControlsPanelView: UIView {
         init(dotRadius: CGFloat) {
             super.init(frame: .zero)
 
+            backgroundColor = .white
+
             let dotView = UIView()
             dotView.translatesAutoresizingMaskIntoConstraints = false
             dotView.backgroundColor = .black
@@ -199,15 +201,19 @@ final class ControlsPanelView: UIView {
 
         var didSelect: ((_ index: Int) -> Void)?
 
-        override func loadView() {
-            view = UIStackView()
-        }
+        private let stackView = UIStackView()
 
         override func viewDidLoad() {
             super.viewDidLoad()
 
-            let stackView = view as! UIStackView
+            view.backgroundColor = .lightGray
+
+            stackView.translatesAutoresizingMaskIntoConstraints = false
             stackView.axis = .vertical
+
+            view.addSubview(stackView)
+
+            let itemAspectSize: CGFloat = 50
 
             for item in items {
                 let v: UIView!
@@ -224,17 +230,28 @@ final class ControlsPanelView: UIView {
                 v.addGestureRecognizer(tapGR)
 
                 NSLayoutConstraint.activate([
-                    v.widthAnchor.constraint(equalToConstant: 50),
-                    v.heightAnchor.constraint(equalToConstant: 50),
-                    view.widthAnchor.constraint(equalToConstant: 50),
+                    v.heightAnchor.constraint(equalToConstant: itemAspectSize),
+                    v.widthAnchor.constraint(equalToConstant: itemAspectSize),
                 ])
             }
 
-            preferredContentSize = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+            preferredContentSize = CGSize(width: itemAspectSize, height: CGFloat(items.count) * itemAspectSize)
+        }
+
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+
+            var frame = CGRect(origin: .zero, size: preferredContentSize)
+            if popoverPresentationController?.arrowDirection == .left {
+                frame.origin.x = view.frame.width - preferredContentSize.width
+            } else if popoverPresentationController?.arrowDirection == .right {
+                frame.origin.y = view.frame.height - preferredContentSize.height
+            }
+            stackView.frame = frame
         }
 
         @objc private func didTap(_ tapGR: UITapGestureRecognizer) {
-            let i = ((view as! UIStackView).arrangedSubviews.firstIndex(where: { $0 === tapGR.view }))!
+            let i = (stackView.arrangedSubviews.firstIndex(where: { $0 === tapGR.view }))!
             didSelect?(i)
         }
     }
@@ -273,9 +290,8 @@ final class ControlsPanelView: UIView {
         }
 
         if let popoverPresentationController = popoverContentController.popoverPresentationController {
-            popoverPresentationController.permittedArrowDirections = .right
-            popoverPresentationController.sourceView = self
-            popoverPresentationController.sourceRect = color.frame
+            popoverPresentationController.permittedArrowDirections = .any
+            popoverPresentationController.sourceView = self.color
 
             let presentingViewController = delegate?.controlsPanelViewPresentingViewController(self)
             presentingViewController?.present(popoverContentController, animated: true, completion: nil)
@@ -297,9 +313,8 @@ final class ControlsPanelView: UIView {
         }
 
         if let popoverPresentationController = popoverContentController.popoverPresentationController {
-            popoverPresentationController.permittedArrowDirections = .right
-            popoverPresentationController.sourceView = self
-            popoverPresentationController.sourceRect = layers.frame
+            popoverPresentationController.permittedArrowDirections = .any
+            popoverPresentationController.sourceView = self.layers
 
             let presentingViewController = delegate?.controlsPanelViewPresentingViewController(self)
             presentingViewController?.present(popoverContentController, animated: true, completion: nil)
