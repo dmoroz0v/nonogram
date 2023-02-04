@@ -11,16 +11,12 @@ import UIKit
 protocol ControlsPanelViewDelegate: AnyObject {
     func controlsPanelViewDidTapExit(_: ControlsPanelView)
     func controlsPanelViewPresentingViewController(_: ControlsPanelView) -> UIViewController
-    func controlsPanelView(_: ControlsPanelView, didSelectItem: ControlsPanelView.Item)
+    func controlsPanelView(_: ControlsPanelView, didSelectPen: Pen)
     func controlsPanelView(_: ControlsPanelView, didSelectLayerColor: Field.Color)
     func controlsPanelViewDidCloseLayer(_: ControlsPanelView)
 }
 
 final class ControlsPanelView: UIView {
-
-    enum Item {
-        case empty, color(Field.Color)
-    }
 
     private final class EmptyView: UIView {
         init(dotRadius: CGFloat) {
@@ -94,7 +90,7 @@ final class ControlsPanelView: UIView {
     private let close = UIButton()
     private var selectedLayerColor: Field.Color?
 
-    var item: Item = .empty {
+    var pen: Pen = .empty {
         didSet {
             update()
         }
@@ -103,7 +99,7 @@ final class ControlsPanelView: UIView {
     private func update() {
         color.backgroundColor = .clear
 
-        switch item {
+        switch pen {
         case .empty:
             color.backgroundColor = nil
         case .color(let c):
@@ -281,11 +277,11 @@ final class ControlsPanelView: UIView {
             self.popoverContentController?.dismiss(animated: true)
             self.popoverContentController = nil
             if i == 0 {
-                self.delegate?.controlsPanelView(self, didSelectItem: .empty)
+                self.delegate?.controlsPanelView(self, didSelectPen: .empty)
             } else if let selectedLayerColor = self.selectedLayerColor {
-                self.delegate?.controlsPanelView(self, didSelectItem: .color(selectedLayerColor))
+                self.delegate?.controlsPanelView(self, didSelectPen: .color(selectedLayerColor))
             } else {
-                self.delegate?.controlsPanelView(self, didSelectItem: .color(self.colors[i - 1]))
+                self.delegate?.controlsPanelView(self, didSelectPen: .color(self.colors[i - 1]))
             }
         }
 

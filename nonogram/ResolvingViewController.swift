@@ -8,10 +8,9 @@
 import Foundation
 import UIKit
 
-enum Pen {
+enum Pen: Equatable {
     case empty
     case color(Field.Color)
-    case layer(Field.Color)
 }
 
 protocol ResolvingViewControllerDelegate: AnyObject {
@@ -34,8 +33,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
     enum UpdateAction {
         case selectLayer(penColor: Field.Color)
-        case selectPen(pen: Pen)
-        case closeLayerAndSelectPen(pen: Pen)
+        case closeLayer
     }
 
     weak var delegate: ResolvingViewControllerDelegate?
@@ -58,21 +56,13 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     private var sourceField: Field!
     private var layers: [String: Field] = [:]
     private var layerColorId: String?
-    private var prevPens: [Pen] = []
+    private var lastColoredPen: Pen?
     private var pen: Pen = .empty {
         didSet {
-            prevPens.append(oldValue)
-            if prevPens.count == 11 {
-                prevPens = Array(prevPens.dropFirst(1))
+            if oldValue != .empty {
+                lastColoredPen = oldValue
             }
-            switch pen {
-            case .empty:
-                controlsPanelView.item = .empty
-            case .color(let c):
-                controlsPanelView.item = .color(c)
-            case .layer(let c):
-                controlsPanelView.item = .color(c)
-            }
+            controlsPanelView.pen = pen
         }
     }
 
@@ -151,12 +141,12 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
         fieldView.horizontalDefsCell.delegate = self
         fieldView.horizontalDefsCell.pickColorHandler = { [weak self] color in
-            self?.update(with: .selectPen(pen: .color(color)))
+            self?.pen = .color(color)
         }
 
         fieldView.verticalDefsCell.delegate = self
         fieldView.verticalDefsCell.pickColorHandler = { [weak self] color in
-            self?.update(with: .selectPen(pen: .color(color)))
+            self?.pen = .color(color)
         }
 
         fieldView.solutionView.delegate = self
@@ -271,7 +261,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     func update(with action: UpdateAction) {
         switch action {
         case .selectLayer(let penColor):
-            self.pen = .layer(penColor)
+            self.pen = .color(penColor)
             sourceField = field
             if layers[penColor.id] == nil {
                 layers[penColor.id] = Field(
@@ -326,9 +316,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             for columnIndex in 0..<field.size.columns {
                 strikeEmptyCellsIfResolved(column: columnIndex)
             }
-        case .closeLayerAndSelectPen(let pen):
-            self.pen = pen
-
+        case .closeLayer:
             layers[layerColorId!] = field
             field = sourceField
             sourceField = nil
@@ -349,9 +337,6 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             for columnIndex in 0..<field.size.columns {
                 strikeEmptyCellsIfResolved(column: columnIndex)
             }
-
-        case .selectPen(let pen):
-            self.pen = pen
         }
 
         applyState()
@@ -405,28 +390,20 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     }
 
     func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
-        switch pen {
-        case .empty:
-            if let layerColorId {
-                pen = .layer(colors.first(where: { $0.id == layerColorId })!)
-            } else {
-                let prevDoloredPen = prevPens.reversed().first { prevPen in
-                    switch prevPen {
-                    case .empty: return false
-                    case .color, .layer: return true
-                    }
-                }
-                switch prevDoloredPen {
-                case .empty, .none:
-                    pen = .color(colors.first!)
-                case .color(let c):
-                    pen = .color(c)
-                case .layer(let c):
-                    pen = .color(c)
-                }
+        if let layerColorId {
+            switch pen {
+            case .empty:
+                pen = .color(colors.first(where: { $0.id == layerColorId })!)
+            case .color:
+                pen = .empty
             }
-        case .color, .layer:
-            pen = .empty
+        } else {
+            switch pen {
+            case .empty:
+                pen = lastColoredPen ?? .color(colors.first!)
+            case .color:
+                pen = .empty
+            }
         }
     }
 
@@ -458,28 +435,15 @@ extension ResolvingViewController: ControlsPanelViewDelegate {
     }
 
     func controlsPanelViewDidCloseLayer(_: ControlsPanelView) {
-        if case .layer(let c) = pen {
-            update(with: .closeLayerAndSelectPen(pen: .color(c)))
-        } else {
-            update(with: .closeLayerAndSelectPen(pen: .empty))
-        }
+        update(with: .closeLayer)
     }
 
     func controlsPanelViewPresentingViewController(_: ControlsPanelView) -> UIViewController {
         return self
     }
 
-    func controlsPanelView(_: ControlsPanelView, didSelectItem item: ControlsPanelView.Item) {
-        switch item {
-        case .empty:
-            update(with: .selectPen(pen: .empty))
-        case .color(let color):
-            if layerColorId != nil {
-                update(with: .selectPen(pen: .layer(color)))
-            } else {
-                update(with: .selectPen(pen: .color(color)))
-            }
-        }
+    func controlsPanelView(_: ControlsPanelView, didSelectPen pen: Pen) {
+        self.pen = pen
     }
 }
 
@@ -505,18 +469,15 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             newValue = .empty
         case .color(let c):
             newValue = .init(value: .color(c))
-        case .layer(let c):
-            newValue = .init(value: .color(c))
         }
 
         var validValue: Field.Point
-
         let s = solution[row][column]
         if s == 0 {
             validValue = .empty
         } else {
             let color = colors[s - 1]
-            if layerColorId != nil {
+            if let layerColorId {
                 if layerColorId == color.id {
                     validValue = .init(value: .color(color))
                 } else {
