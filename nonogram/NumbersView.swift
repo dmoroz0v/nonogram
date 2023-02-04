@@ -41,9 +41,11 @@ class NumbersView: CellView {
             for (defsIndex, line) in numbersView.defs.enumerated() {
                 for (defIndex, def) in line.enumerated() {
                     let space = numbersView.offset - numbersView.defs[defsIndex].count
-                    ctx.setFillColor(def.color.c.cgColor)
                     let cellAspectSize = numbersView.cellAspectSize
                     var rectangle: CGRect
+
+                    // >> Рисуем сплошную заливку клетки
+                    ctx.setFillColor(def.color.c.cgColor)
                     if numbersView.axis == .horizontal {
                         rectangle = CGRect(
                             x: cellAspectSize * CGFloat(space + defIndex),
@@ -60,17 +62,21 @@ class NumbersView: CellView {
                         )
                     }
                     ctx.fill(rectangle)
+                    // <<
 
-                    let textColor = def.color.contrastColor
-                    
+                    let contrastColor = def.color.contrastColor
+
+                    // >> Рисуем обводку
                     if defsIndex == numbersView.focusedIndex {
                         var rectangle = rectangle
                         rectangle = rectangle.insetBy(dx: 1, dy: 1)
                         ctx.setLineWidth(1)
-                        ctx.setStrokeColor(textColor.cgColor)
+                        ctx.setStrokeColor(contrastColor.cgColor)
                         ctx.stroke(rectangle)
                     }
+                    // <<
 
+                    // >> Рисуем цифру
                     rectangle.origin.y += 0.16 * cellAspectSize
                     let paragraphStyle = NSMutableParagraphStyle()
                     paragraphStyle.alignment = .center
@@ -89,96 +95,83 @@ class NumbersView: CellView {
                         attributes: [
                             NSAttributedString.Key.paragraphStyle: paragraphStyle,
                             NSAttributedString.Key.font: font,
-                            NSAttributedString.Key.foregroundColor: textColor
+                            NSAttributedString.Key.foregroundColor: contrastColor
                         ])
                     string.draw(in: rectangle)
+                    // <<
                 }
 
                 if let line = numbersView.delegate?.numbersView(numbersView, defsForIndex: defsIndex) {
-                    var defIndex = 0
-                    var n = 0
-                    for (pointIndex, point) in line.enumerated() {
-                        if point == .undefined {
-                            break
-                        }
-                        if point != .empty {
-                            n += 1
-                        }
-                        if n != 0 && (pointIndex + 1 == line.count || line[pointIndex + 1] != point) {
-                            let defs = numbersView.defs[defsIndex]
-                            let def = defs[defIndex]
-                            if n == def.n {
-                                let cellAspectSize = numbersView.cellAspectSize
+                    // >> проходимся от начала линии до конца и пытаемся вычеркнуть цифры слева или сверху
+                    strikeDefs(ctx: ctx,
+                               line: line,
+                               range: Array(0..<line.count),
+                               defStartIndex: 0,
+                               increment: 1,
+                               defsIndex: defsIndex)
+                    // <<
 
-                                var rectangle: CGRect
-                                if numbersView.axis == .horizontal {
-                                    rectangle = CGRect(
-                                        x: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
-                                        y: cellAspectSize * CGFloat(defsIndex),
-                                        width: cellAspectSize,
-                                        height: cellAspectSize
-                                    )
-                                } else {
-                                    rectangle = CGRect(
-                                        x: cellAspectSize * CGFloat(defsIndex),
-                                        y: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
-                                        width: cellAspectSize,
-                                        height: cellAspectSize
-                                    )
-                                }
-                                ctx.setStrokeColor(def.color.contrastColor.cgColor)
-                                ctx.setLineWidth(1)
-                                ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
-                                ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
-                                ctx.strokePath()
+                    // >> проходимся от конца линии до начала и пытаемся вычеркнуть цифры справа или снизу
+                    strikeDefs(ctx: ctx,
+                               line: line,
+                               range: (0..<line.count).reversed(),
+                               defStartIndex: numbersView.defs[defsIndex].count - 1,
+                               increment: -1,
+                               defsIndex: defsIndex)
+                    // <<
+                }
+            }
+        }
 
-                                n = 0
-                                defIndex += 1
-                            }
-                        }
-                    }
+        private func strikeDefs(
+            ctx: CGContext,
+            line: [Field.Point],
+            range: [Int],
+            defStartIndex: Int,
+            increment: Int,
+            defsIndex: Int
+        ) {
+            var defIndex = defStartIndex
+            var n = 0
+            for pointIndex in range {
+                let point = line[pointIndex]
+                if point == .undefined {
+                    break
+                }
+                if point != .empty {
+                    n += 1
+                }
+                if n != 0 && (pointIndex + 1 == line.count || pointIndex == 0 || line[pointIndex + increment] != point) {
+                    let defs = numbersView.defs[defsIndex]
+                    let def = defs[defIndex]
+                    if n == def.n {
+                        let cellAspectSize = numbersView.cellAspectSize
 
-                    defIndex = numbersView.defs[defsIndex].count - 1
-                    n = 0
-                    for (pointIndex, point) in line.enumerated().reversed() {
-                        if point == .undefined {
-                            break
+                        var rectangle: CGRect
+                        if numbersView.axis == .horizontal {
+                            rectangle = CGRect(
+                                x: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
+                                y: cellAspectSize * CGFloat(defsIndex),
+                                width: cellAspectSize,
+                                height: cellAspectSize
+                            )
+                        } else {
+                            rectangle = CGRect(
+                                x: cellAspectSize * CGFloat(defsIndex),
+                                y: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
+                                width: cellAspectSize,
+                                height: cellAspectSize
+                            )
                         }
-                        if point != .empty {
-                            n += 1
-                        }
-                        if n != 0 && (pointIndex == 0 || line[pointIndex - 1] != point) {
-                            let defs = numbersView.defs[defsIndex]
-                            let def = defs[defIndex]
-                            if n == def.n {
-                                let cellAspectSize = numbersView.cellAspectSize
+                        rectangle = rectangle.insetBy(dx: 2, dy: 2)
+                        ctx.setStrokeColor(def.color.contrastColor.cgColor)
+                        ctx.setLineWidth(1)
+                        ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
+                        ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
+                        ctx.strokePath()
 
-                                var rectangle: CGRect
-                                if numbersView.axis == .horizontal {
-                                    rectangle = CGRect(
-                                        x: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
-                                        y: cellAspectSize * CGFloat(defsIndex),
-                                        width: cellAspectSize,
-                                        height: cellAspectSize
-                                    )
-                                } else {
-                                    rectangle = CGRect(
-                                        x: cellAspectSize * CGFloat(defsIndex),
-                                        y: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
-                                        width: cellAspectSize,
-                                        height: cellAspectSize
-                                    )
-                                }
-                                ctx.setStrokeColor(def.color.contrastColor.cgColor)
-                                ctx.setLineWidth(1)
-                                ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
-                                ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
-                                ctx.strokePath()
-
-                                n = 0
-                                defIndex -= 1
-                            }
-                        }
+                        n = 0
+                        defIndex += increment
                     }
                 }
             }
@@ -383,7 +376,7 @@ class NumbersView: CellView {
         }
 
         if sumLabelView.superview == nil {
-            cv.addSubview(sumLabelView)
+            addSubview(sumLabelView)
         }
         sumLabelView.frame.size = CGSize(width: 24, height: 24)
         sumLabel.frame.size = CGSize(width: 24, height: 24)

@@ -45,6 +45,12 @@ class SolutionView: CellView {
                         width: solutionView.cellAspectSize,
                         height: solutionView.cellAspectSize
                     )
+                    let ficusedCellInsets = UIEdgeInsets(
+                        top: 3/UIScreen.main.scale,
+                        left: 3/UIScreen.main.scale,
+                        bottom: 2/UIScreen.main.scale,
+                        right: 2/UIScreen.main.scale
+                    )
                     switch point.value {
                     case .color(let color):
                         ctx.setFillColor(color.c.cgColor)
@@ -53,7 +59,7 @@ class SolutionView: CellView {
                            solutionView.focusedCell?.column == columnIndex {
                             ctx.setStrokeColor(color.contrastColor.cgColor)
                             var rectangle = rectangle
-                            rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                            rectangle = rectangle.inset(by: ficusedCellInsets)
                             ctx.setLineWidth(1)
                             ctx.stroke(rectangle)
                         }
@@ -70,7 +76,7 @@ class SolutionView: CellView {
                            solutionView.focusedCell?.column == columnIndex {
                             ctx.setStrokeColor(UIColor.gray.cgColor)
                             var rectangle = rectangle
-                            rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                            rectangle = rectangle.inset(by: ficusedCellInsets)
                             ctx.setLineWidth(1)
                             ctx.stroke(rectangle)
                         }
@@ -79,7 +85,7 @@ class SolutionView: CellView {
                            solutionView.focusedCell?.column == columnIndex {
                             ctx.setStrokeColor(UIColor.gray.cgColor)
                             var rectangle = rectangle
-                            rectangle = rectangle.insetBy(dx: 1, dy: 1)
+                            rectangle = rectangle.inset(by: ficusedCellInsets)
                             ctx.setLineWidth(1)
                             ctx.stroke(rectangle)
                         }

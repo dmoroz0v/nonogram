@@ -40,6 +40,11 @@ final class FieldView: UIView, PanGRDelegate {
         leftTopCell.translatesAutoresizingMaskIntoConstraints = false
         addSubview(leftTopCell)
 
+        solutionView.translatesAutoresizingMaskIntoConstraints = false
+        solutionView.size = field.size
+        solutionView.cellAspectSize = cellAspectSize
+        addSubview(solutionView)
+
         horizontalDefsCell.translatesAutoresizingMaskIntoConstraints = false
         horizontalDefsCell.cellAspectSize = cellAspectSize
         horizontalDefsCell.defs = field.horizintals
@@ -53,11 +58,6 @@ final class FieldView: UIView, PanGRDelegate {
         verticalDefsCell.offset = maxVerticalDefs
         verticalDefsCell.axis = .vertical
         addSubview(verticalDefsCell)
-
-        solutionView.translatesAutoresizingMaskIntoConstraints = false
-        solutionView.size = field.size
-        solutionView.cellAspectSize = cellAspectSize
-        addSubview(solutionView)
 
         NSLayoutConstraint.activate([
             widthAnchor.constraint(
