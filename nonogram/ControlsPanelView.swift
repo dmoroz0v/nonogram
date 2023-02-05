@@ -130,9 +130,16 @@ final class ControlsPanelView: UIView {
         layer.shadowRadius = 16
         layer.shadowOpacity = 0.2
 
+        let pupochkaView = UIView()
+        pupochkaView.translatesAutoresizingMaskIntoConstraints = false
+        pupochkaView.backgroundColor = UIColor(white: 0.9, alpha: 1)
+        pupochkaView.layer.cornerRadius = 4
+        pupochkaView.layer.masksToBounds = true
+        addSubview(pupochkaView)
+
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
-        stackView.spacing = 4
+        stackView.spacing = 3
 
         exitButton.setImage(UIImage(named: "exit"), for: .normal)
         exitButton.addTarget(self, action: #selector(tapExit), for: .touchUpInside)
@@ -159,7 +166,11 @@ final class ControlsPanelView: UIView {
         }
 
         constraints += [
-            stackView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            pupochkaView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            pupochkaView.heightAnchor.constraint(equalToConstant: 6),
+            pupochkaView.widthAnchor.constraint(equalToConstant: 24),
+            pupochkaView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            stackView.topAnchor.constraint(equalTo: pupochkaView.bottomAnchor, constant: 8),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
