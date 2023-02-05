@@ -14,7 +14,7 @@ class Storage {
         let title: String
         let field: Field
         let layers: [String: Field]
-        let currentLayer: String?
+        let selectedLayerColor: Field.Color?
         let solution: [[Int]]
         let colors: [Field.Color]
     }
@@ -28,7 +28,7 @@ class Storage {
               title: String,
               field: Field,
               layers: [String: Field],
-              currentLayer: String?,
+              selectedLayerColor: Field.Color?,
               solution: [[Int]],
               colors: [Field.Color]
     ) {
@@ -38,7 +38,7 @@ class Storage {
             title: title,
             field: field,
             layers: layers,
-            currentLayer: currentLayer,
+            selectedLayerColor: selectedLayerColor,
             solution: solution,
             colors: colors
         )

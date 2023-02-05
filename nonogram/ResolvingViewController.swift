@@ -18,7 +18,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
         _: ResolvingViewController,
         didChangeState: Field,
         layers: [String: Field],
-        currentLayer: String?,
+        selectedLayerColor: Field.Color?,
         solution: [[Int]],
         colors: [Field.Color],
         url: URL,
@@ -41,7 +41,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     // views
     private let scrollView = UIScrollView()
     private let contentView = CellView()
-    private let controlsPanelView = ControlsPanelView()
+    private let controlsPanelVC = ControlsPanelViewController()
     private var fieldView: FieldView!
 
     private var controlsPanelViewHotizontal: NSLayoutConstraint?
@@ -55,14 +55,18 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     private var field: Field!
     private var sourceField: Field!
     private var layers: [String: Field] = [:]
-    private var layerColorId: String?
+    private var selectedLayerColor: Field.Color? {
+        didSet {
+            controlsPanelVC.selectedLayerColor = selectedLayerColor
+        }
+    }
     private var lastColoredPen: Pen?
     private var pen: Pen = .empty {
         didSet {
             if oldValue != .empty {
                 lastColoredPen = oldValue
             }
-            controlsPanelView.pen = pen
+            controlsPanelVC.pen = pen
         }
     }
 
@@ -97,7 +101,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         title: String,
         field: Field,
         layers: [String: Field],
-        currentLayer: String?,
+        selectedLayerColor: Field.Color?,
         solution: [[Int]],
         colors: [Field.Color]
     ) {
@@ -106,10 +110,10 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         self.crosswordTitle = title
         self.field = field
         self.layers = layers
-        self.layerColorId = currentLayer
-        if let currentLayer = currentLayer {
+        self.selectedLayerColor = selectedLayerColor
+        if let selectedLayerColor {
             self.sourceField = field
-            self.field = layers[currentLayer]
+            self.field = layers[selectedLayerColor.id]
         }
         self.solution = solution
         self.colors = colors
@@ -154,16 +158,18 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
         contentView.contentView.addSubview(fieldView)
 
-        controlsPanelView.translatesAutoresizingMaskIntoConstraints = false
-        controlsPanelView.colors = field.colors
-        controlsPanelView.delegate = self
-        view.addSubview(controlsPanelView)
+        controlsPanelVC.view.translatesAutoresizingMaskIntoConstraints = false
+        controlsPanelVC.colors = field.colors
+        controlsPanelVC.delegate = self
+        addChild(controlsPanelVC)
+        view.addSubview(controlsPanelVC.view)
+        controlsPanelVC.didMove(toParent: self)
 
         let controlsPanelViewPanGR = UIPanGestureRecognizer(
             target: self,
             action: #selector(controlsPanelViewPan(_:))
         )
-        controlsPanelView.addGestureRecognizer(controlsPanelViewPanGR)
+        controlsPanelVC.view.addGestureRecognizer(controlsPanelViewPanGR)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -182,12 +188,12 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             fieldView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
 
             {
-                controlsPanelViewHotizontal = controlsPanelView.leadingAnchor.constraint(
+                controlsPanelViewHotizontal = controlsPanelVC.view.leadingAnchor.constraint(
                     equalTo: view.safeAreaLayoutGuide.leadingAnchor)
                 return controlsPanelViewHotizontal!
             }(),
             {
-                controlsPanelViewVertical = controlsPanelView.centerYAnchor.constraint(
+                controlsPanelViewVertical = controlsPanelVC.view.centerYAnchor.constraint(
                     equalTo: view.centerYAnchor)
                 return controlsPanelViewVertical!
             }(),
@@ -202,25 +208,25 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if controlsPanelViewHotizontal!.constant > view.frame.width - controlsPanelView.frame.width {
-            controlsPanelViewHotizontal!.constant = view.frame.width - controlsPanelView.frame.width
+        if controlsPanelViewHotizontal!.constant > view.frame.width - controlsPanelVC.view.frame.width {
+            controlsPanelViewHotizontal!.constant = view.frame.width - controlsPanelVC.view.frame.width
         }
         if controlsPanelViewHotizontal!.constant < 0 {
             controlsPanelViewHotizontal!.constant = 0
         }
-        if controlsPanelViewVertical!.constant > view.frame.height/2 - controlsPanelView.frame.height/2 {
-            controlsPanelViewVertical!.constant = view.frame.height/2 - controlsPanelView.frame.height/2
+        if controlsPanelViewVertical!.constant > view.frame.height/2 - controlsPanelVC.view.frame.height/2 {
+            controlsPanelViewVertical!.constant = view.frame.height/2 - controlsPanelVC.view.frame.height/2
         }
-        if controlsPanelViewVertical!.constant < -view.frame.height/2 + controlsPanelView.frame.height/2 {
-            controlsPanelViewVertical!.constant = -view.frame.height/2 + controlsPanelView.frame.height/2
+        if controlsPanelViewVertical!.constant < -view.frame.height/2 + controlsPanelVC.view.frame.height/2 {
+            controlsPanelViewVertical!.constant = -view.frame.height/2 + controlsPanelVC.view.frame.height/2
         }
     }
 
     func strikeEmptyCellsIfResolved(row: Int) {
         var rowIsResolved = true
         for columnIndex in 0..<field.size.columns {
-            if let layerColorId = layerColorId {
-                let index = colors.firstIndex { $0.id == layerColorId }! + 1
+            if let selectedLayerColor {
+                let index = colors.firstIndex { $0.id == selectedLayerColor.id }! + 1
                 if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] == index {
                     rowIsResolved = false
                 }
@@ -240,8 +246,8 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     func strikeEmptyCellsIfResolved(column: Int) {
         var columnIsResolved = true
         for rowIndex in 0..<field.size.rows {
-            if let layerColorId = layerColorId {
-                let index = colors.firstIndex { $0.id == layerColorId }! + 1
+            if let selectedLayerColor {
+                let index = colors.firstIndex { $0.id == selectedLayerColor.id }! + 1
                 if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] == index {
                     columnIsResolved = false
                 }
@@ -308,7 +314,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
                 }
             }
 
-            layerColorId = penColor.id
+            selectedLayerColor = penColor
 
             for rowIndex in 0..<field.size.rows {
                 strikeEmptyCellsIfResolved(row: rowIndex)
@@ -317,19 +323,19 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
                 strikeEmptyCellsIfResolved(column: columnIndex)
             }
         case .closeLayer:
-            layers[layerColorId!] = field
+            layers[selectedLayerColor!.id] = field
             field = sourceField
             sourceField = nil
 
-            for (rowIndex, row) in layers[layerColorId!]!.points.enumerated() {
+            for (rowIndex, row) in layers[selectedLayerColor!.id]!.points.enumerated() {
                 for (columnIndex, point) in row.enumerated() {
-                    if case .color(let c) = point.value, c.id == layerColorId {
+                    if case .color(let c) = point.value, c == selectedLayerColor {
                         field.points[rowIndex][columnIndex] = point
                     }
                 }
             }
 
-            layerColorId = nil
+            selectedLayerColor = nil
 
             for rowIndex in 0..<field.size.rows {
                 strikeEmptyCellsIfResolved(row: rowIndex)
@@ -345,7 +351,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             self,
             didChangeState: sourceField ?? field,
             layers: layers,
-            currentLayer: layerColorId,
+            selectedLayerColor: selectedLayerColor,
             solution: solution,
             colors: colors,
             url: url,
@@ -360,12 +366,6 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         fieldView.horizontalDefsCell.setNeedsDisplay()
         fieldView.verticalDefsCell.defs = field.verticals
         fieldView.verticalDefsCell.setNeedsDisplay()
-
-        if layerColorId == nil {
-            controlsPanelView.showCommon()
-        } else {
-            controlsPanelView.showLayer(color: field.colors.first(where: { $0.id == layerColorId })!)
-        }
     }
 
     private var controlsPanelViewPanPrevLocation: CGPoint?
@@ -390,10 +390,10 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
     }
 
     func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
-        if let layerColorId {
+        if let selectedLayerColor {
             switch pen {
             case .empty:
-                pen = .color(colors.first(where: { $0.id == layerColorId })!)
+                pen = .color(selectedLayerColor)
             case .color:
                 pen = .empty
             }
@@ -425,24 +425,20 @@ extension ResolvingViewController: NumbersViewDelegate {
     }
 }
 
-extension ResolvingViewController: ControlsPanelViewDelegate {
-    func controlsPanelViewDidTapExit(_: ControlsPanelView) {
+extension ResolvingViewController: ControlsPanelViewControllerDelegate {
+    func controlsPanelViewControllerDidTapExit(_: ControlsPanelViewController) {
         delegate?.resolvingViewControllerDidTapExit(self)
     }
 
-    func controlsPanelView(_: ControlsPanelView, didSelectLayerColor color: Field.Color) {
+    func controlsPanelViewController(_: ControlsPanelViewController, didSelectLayerColor color: Field.Color) {
         update(with: .selectLayer(penColor: color))
     }
 
-    func controlsPanelViewDidCloseLayer(_: ControlsPanelView) {
+    func controlsPanelViewControllerDidTapCloseLayer(_: ControlsPanelViewController) {
         update(with: .closeLayer)
     }
 
-    func controlsPanelViewPresentingViewController(_: ControlsPanelView) -> UIViewController {
-        return self
-    }
-
-    func controlsPanelView(_: ControlsPanelView, didSelectPen pen: Pen) {
+    func controlsPanelViewController(_: ControlsPanelViewController, didSelectPen pen: Pen) {
         self.pen = pen
     }
 }
@@ -477,8 +473,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             validValue = .empty
         } else {
             let color = colors[s - 1]
-            if let layerColorId {
-                if layerColorId == color.id {
+            if let selectedLayerColor {
+                if selectedLayerColor.id == color.id {
                     validValue = .init(value: .color(color))
                 } else {
                     validValue = .empty
@@ -495,8 +491,8 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             fieldView.verticalDefsCell.focusedIndex = column
             solutionView.focusedCell = (row: row, column: column)
 
-            if let layerId = layerColorId {
-                layers[layerId] = field
+            if let selectedLayerColor {
+                layers[selectedLayerColor.id] = field
             }
             strikeEmptyCellsIfResolved(row: row)
             strikeEmptyCellsIfResolved(column: column)
@@ -507,7 +503,7 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
                 self,
                 didChangeState: sourceField ?? field,
                 layers: layers,
-                currentLayer: layerColorId,
+                selectedLayerColor: selectedLayerColor,
                 solution: solution,
                 colors: colors,
                 url: url,

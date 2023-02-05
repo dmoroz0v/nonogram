@@ -32,7 +32,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
                     title: title,
                     field: data.field,
                     layers: data.layers,
-                    currentLayer: data.currentLayer,
+                    selectedLayerColor: data.selectedLayerColor,
                     solution: data.solution,
                     colors: data.colors
                 )
@@ -96,7 +96,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         _ vc: ResolvingViewController,
         didChangeState field: Field,
         layers: [String : Field],
-        currentLayer: String?,
+        selectedLayerColor: Field.Color?,
         solution: [[Int]],
         colors: [Field.Color],
         url: URL,
@@ -110,7 +110,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
             title: title,
             field: field,
             layers: layers,
-            currentLayer: currentLayer,
+            selectedLayerColor: selectedLayerColor,
             solution: solution,
             colors: colors
         )

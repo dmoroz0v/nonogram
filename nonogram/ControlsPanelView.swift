@@ -10,15 +10,14 @@ import UIKit
 
 protocol ControlsPanelViewDelegate: AnyObject {
     func controlsPanelViewDidTapExit(_: ControlsPanelView)
-    func controlsPanelViewPresentingViewController(_: ControlsPanelView) -> UIViewController
-    func controlsPanelView(_: ControlsPanelView, didSelectPen: Pen)
-    func controlsPanelView(_: ControlsPanelView, didSelectLayerColor: Field.Color)
-    func controlsPanelViewDidCloseLayer(_: ControlsPanelView)
+    func controlsPanelViewDidTapCloseLayer(_: ControlsPanelView)
+    func controlsPanelView(_: ControlsPanelView, didTapLayers: UIView)
+    func controlsPanelView(_: ControlsPanelView, didTapColors: UIView)
 }
 
 final class ControlsPanelView: UIView {
 
-    private final class EmptyView: UIView {
+    final class EmptyView: UIView {
         init(dotRadius: CGFloat) {
             super.init(frame: .zero)
 
@@ -84,52 +83,40 @@ final class ControlsPanelView: UIView {
 
     weak var delegate: ControlsPanelViewDelegate?
 
-    private let exit = UIButton()
-    private let color = ColorButton()
-    private let layers = UIButton()
-    private let close = UIButton()
-    private var selectedLayerColor: Field.Color?
+    private let exitButton = UIButton()
+    private let colorsButton = ColorButton()
+    private let layersButton = UIButton()
+    private let closeLayerButton = UIButton()
 
-    var pen: Pen = .empty {
-        didSet {
-            update()
-        }
-    }
-
-    private func update() {
-        color.backgroundColor = .clear
-
+    func update(with pen: Pen) {
         switch pen {
         case .empty:
-            color.backgroundColor = nil
+            colorsButton.backgroundColor = nil
         case .color(let c):
-            color.backgroundColor = c.c
+            colorsButton.backgroundColor = c.c
         }
     }
 
-    var colors: [Field.Color] = []
-
-    func showCommon() {
-        stackView.arrangedSubviews.forEach({
-            $0.removeFromSuperview()
-        })
-        selectedLayerColor = nil
-
-        stackView.addArrangedSubview(exit)
-        stackView.addArrangedSubview(color)
-        stackView.addArrangedSubview(layers)
+    func showDefaultState() {
+        showButtons([exitButton, colorsButton, layersButton])
     }
 
-    func showLayer(color: Field.Color) {
+    func showLayerState() {
+        showButtons([exitButton, colorsButton, closeLayerButton])
+    }
+
+    private func showButtons(_ buttons: [UIView]) {
+        if stackView.arrangedSubviews == buttons {
+            return
+        }
+
         stackView.arrangedSubviews.forEach({
             $0.removeFromSuperview()
         })
 
-        selectedLayerColor = color
-
-        stackView.addArrangedSubview(exit)
-        stackView.addArrangedSubview(self.color)
-        stackView.addArrangedSubview(close)
+        buttons.forEach {
+            stackView.addArrangedSubview($0)
+        }
     }
 
     private let stackView = UIStackView()
@@ -147,24 +134,24 @@ final class ControlsPanelView: UIView {
         stackView.axis = .vertical
         stackView.spacing = 4
 
-        exit.setImage(UIImage(named: "exit"), for: .normal)
-        exit.addTarget(self, action: #selector(tapExit), for: .touchUpInside)
-        stackView.addArrangedSubview(exit)
+        exitButton.setImage(UIImage(named: "exit"), for: .normal)
+        exitButton.addTarget(self, action: #selector(tapExit), for: .touchUpInside)
+        stackView.addArrangedSubview(exitButton)
 
-        color.addTarget(self, action: #selector(tapColor), for: .touchUpInside)
-        stackView.addArrangedSubview(color)
+        colorsButton.addTarget(self, action: #selector(tapColors), for: .touchUpInside)
+        stackView.addArrangedSubview(colorsButton)
 
-        layers.setImage(UIImage(named: "layers"), for: .normal)
-        layers.addTarget(self, action: #selector(tapLayer), for: .touchUpInside)
-        stackView.addArrangedSubview(layers)
+        layersButton.setImage(UIImage(named: "layers"), for: .normal)
+        layersButton.addTarget(self, action: #selector(tapLayers), for: .touchUpInside)
+        stackView.addArrangedSubview(layersButton)
 
-        close.setTitle("X", for: .normal)
-        close.addTarget(self, action: #selector(tapClose), for: .touchUpInside)
-        close.setTitleColor(.black, for: .normal)
+        closeLayerButton.setTitle("X", for: .normal)
+        closeLayerButton.addTarget(self, action: #selector(tapCloseLayer), for: .touchUpInside)
+        closeLayerButton.setTitleColor(.black, for: .normal)
 
         addSubview(stackView)
 
-        var constraints = [close, layers, exit, color].flatMap {
+        var constraints = [closeLayerButton, layersButton, exitButton, colorsButton].flatMap {
             [
                 $0.widthAnchor.constraint(equalToConstant: 32),
                 $0.heightAnchor.constraint(equalToConstant: 32),
@@ -179,141 +166,25 @@ final class ControlsPanelView: UIView {
         ]
 
         NSLayoutConstraint.activate(constraints)
-
-        update()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    class SelectColorViewController: UIViewController {
-
-        enum Item {
-            case empty, color(Field.Color)
-        }
-
-        var items: [Item] = []
-
-        var didSelect: ((_ index: Int) -> Void)?
-
-        private let stackView = UIStackView()
-
-        override func viewDidLoad() {
-            super.viewDidLoad()
-
-            view.backgroundColor = .lightGray
-
-            stackView.translatesAutoresizingMaskIntoConstraints = false
-            stackView.axis = .vertical
-
-            view.addSubview(stackView)
-
-            let itemAspectSize: CGFloat = 50
-
-            for item in items {
-                let v: UIView!
-                switch item {
-                case .empty:
-                    v = EmptyView(dotRadius: 3)
-                case .color(let color):
-                    v = UIView()
-                    v.backgroundColor = color.c
-                }
-                stackView.addArrangedSubview(v)
-
-                let tapGR = UITapGestureRecognizer(target: self, action: #selector(didTap(_:)))
-                v.addGestureRecognizer(tapGR)
-
-                NSLayoutConstraint.activate([
-                    v.heightAnchor.constraint(equalToConstant: itemAspectSize),
-                    v.widthAnchor.constraint(equalToConstant: itemAspectSize),
-                ])
-            }
-
-            preferredContentSize = CGSize(width: itemAspectSize, height: CGFloat(items.count) * itemAspectSize)
-        }
-
-        override func viewDidLayoutSubviews() {
-            super.viewDidLayoutSubviews()
-
-            var frame = CGRect(origin: .zero, size: preferredContentSize)
-            if popoverPresentationController?.arrowDirection == .left {
-                frame.origin.x = view.frame.width - preferredContentSize.width
-            } else if popoverPresentationController?.arrowDirection == .up {
-                frame.origin.y = view.frame.height - preferredContentSize.height
-            }
-            stackView.frame = frame
-        }
-
-        @objc private func didTap(_ tapGR: UITapGestureRecognizer) {
-            let i = (stackView.arrangedSubviews.firstIndex(where: { $0 === tapGR.view }))!
-            didSelect?(i)
-        }
-    }
-
     @objc private func tapExit() {
         delegate?.controlsPanelViewDidTapExit(self)
     }
 
-    @objc private func tapClose() {
-        delegate?.controlsPanelViewDidCloseLayer(self)
+    @objc private func tapCloseLayer() {
+        delegate?.controlsPanelViewDidTapCloseLayer(self)
     }
 
-    var popoverContentController: SelectColorViewController?
-    @objc private func tapColor() {
-        let popoverContentController = SelectColorViewController()
-        self.popoverContentController = popoverContentController
-        if let selectedLayerColor {
-            popoverContentController.items = [.empty, .color(selectedLayerColor)]
-        } else {
-            popoverContentController.items = [.empty] + colors.map({ .color($0) })
-        }
-        popoverContentController.modalPresentationStyle = .popover
-        popoverContentController.didSelect = { [weak self] i in
-            guard let self else {
-                return
-            }
-            self.popoverContentController?.dismiss(animated: true)
-            self.popoverContentController = nil
-            if i == 0 {
-                self.delegate?.controlsPanelView(self, didSelectPen: .empty)
-            } else if let selectedLayerColor = self.selectedLayerColor {
-                self.delegate?.controlsPanelView(self, didSelectPen: .color(selectedLayerColor))
-            } else {
-                self.delegate?.controlsPanelView(self, didSelectPen: .color(self.colors[i - 1]))
-            }
-        }
-
-        if let popoverPresentationController = popoverContentController.popoverPresentationController {
-            popoverPresentationController.permittedArrowDirections = .any
-            popoverPresentationController.sourceView = self.color
-
-            let presentingViewController = delegate?.controlsPanelViewPresentingViewController(self)
-            presentingViewController?.present(popoverContentController, animated: true, completion: nil)
-        }
+    @objc private func tapColors() {
+        delegate?.controlsPanelView(self, didTapColors: colorsButton)
     }
 
-    @objc private func tapLayer() {
-        let popoverContentController = SelectColorViewController()
-        self.popoverContentController = popoverContentController
-        popoverContentController.items = colors.map({ .color($0) })
-        popoverContentController.modalPresentationStyle = .popover
-        popoverContentController.didSelect = { [weak self] i in
-            guard let self else {
-                return
-            }
-            self.popoverContentController?.dismiss(animated: true)
-            self.popoverContentController = nil
-            self.delegate?.controlsPanelView(self, didSelectLayerColor: self.colors[i])
-        }
-
-        if let popoverPresentationController = popoverContentController.popoverPresentationController {
-            popoverPresentationController.permittedArrowDirections = .any
-            popoverPresentationController.sourceView = self.layers
-
-            let presentingViewController = delegate?.controlsPanelViewPresentingViewController(self)
-            presentingViewController?.present(popoverContentController, animated: true, completion: nil)
-        }
+    @objc private func tapLayers() {
+        delegate?.controlsPanelView(self, didTapLayers: layersButton)
     }
 }

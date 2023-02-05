@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A2487F8C298FC68400D4B610 /* ControlsPanelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2487F8B298FC68400D4B610 /* ControlsPanelViewController.swift */; };
 		A25E8303296FFEEE00CAC48D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25E8302296FFEEE00CAC48D /* AppDelegate.swift */; };
 		A25E8305296FFEEE00CAC48D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25E8304296FFEEE00CAC48D /* SceneDelegate.swift */; };
 		A25E8307296FFEEE00CAC48D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25E8306296FFEEE00CAC48D /* ViewController.swift */; };
@@ -27,6 +28,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A2487F8B298FC68400D4B610 /* ControlsPanelViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsPanelViewController.swift; sourceTree = "<group>"; };
 		A25E82FF296FFEEE00CAC48D /* nonogram.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nonogram.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A25E8302296FFEEE00CAC48D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A25E8304296FFEEE00CAC48D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -85,6 +87,7 @@
 				A25E830B296FFEEE00CAC48D /* Assets.xcassets */,
 				A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */,
 				A25E8310296FFEEE00CAC48D /* Info.plist */,
+				A2487F8B298FC68400D4B610 /* ControlsPanelViewController.swift */,
 				A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */,
 				A2C6591D2970635900FE29B7 /* CellView.swift */,
 				A2C6591F2970636900FE29B7 /* Field.swift */,
@@ -183,6 +186,7 @@
 				A2C659272971336D00FE29B7 /* NumbersView.swift in Sources */,
 				A293B3032986D8A000480EB9 /* FieldView.swift in Sources */,
 				A28183642975A2DE00104A3E /* ListViewController.swift in Sources */,
+				A2487F8C298FC68400D4B610 /* ControlsPanelViewController.swift in Sources */,
 				A2C6591E2970635900FE29B7 /* CellView.swift in Sources */,
 				A25E8303296FFEEE00CAC48D /* AppDelegate.swift in Sources */,
 				A2C659202970636900FE29B7 /* Field.swift in Sources */,
