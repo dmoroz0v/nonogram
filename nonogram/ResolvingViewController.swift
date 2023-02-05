@@ -203,6 +203,8 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         pencilInteraction.delegate = self
         view.addInteraction(pencilInteraction)
 
+        controlsPanelVC.pen = pen
+        controlsPanelVC.selectedLayerColor = selectedLayerColor
         applyState()
     }
 
