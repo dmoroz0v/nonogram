@@ -68,17 +68,31 @@ protocol ListLoaderDelegate: AnyObject {
 
 final class ListLoader {
     weak var delegate: ListLoaderDelegate?
-    private let url = "https://www.nonograms.ru/nonograms2/p/"
+    struct Filter: Equatable {
+        var name: String
+        var url: URL
+    }
+
+    let filters: [Filter] = [
+        Filter(name: "Все", url: URL(string: "https://www.nonograms.ru/nonograms2/p")!),
+        Filter(name: "Крошечные", url: URL(string: "https://www.nonograms.ru/nonograms2/size/xsmall/p")!),
+        Filter(name: "Маленькие", url: URL(string: "https://www.nonograms.ru/nonograms2/size/small/p")!),
+        Filter(name: "Средние", url: URL(string: "https://www.nonograms.ru/nonograms2/size/medium/p")!),
+        Filter(name: "Большие", url: URL(string: "https://www.nonograms.ru/nonograms2/size/large/p")!),
+        Filter(name: "Огромные", url: URL(string: "https://www.nonograms.ru/nonograms2/size/xlarge/p")!),
+        Filter(name: "Гигантские", url: URL(string: "https://www.nonograms.ru/nonograms2/size/xxlarge/p")!),
+    ]
+
     private var isLoading = false
 
-    func loadPage(_ page: Int, completaion: @escaping (_ items: [Item]?) -> Void) {
+    func loadPage(_ page: Int, filter: Filter, completaion: @escaping (_ items: [Item]?) -> Void) {
         if isLoading {
             return
         }
         isLoading = true
         DispatchQueue.global().async {
             do {
-                let data = try Data(contentsOf: URL(string: self.url + "\(page)")!)
+                let data = try Data(contentsOf: filter.url.appendingPathComponent("\(page)"))
 
                 if let s = String(data: data, encoding: .utf8) {
                     let doc: Document = try SwiftSoup.parse(s)
@@ -143,6 +157,41 @@ final class ListLoader {
     }
 }
 
+final class FilterView: UIView {
+    let label = UILabel()
+
+    var isSelected = false {
+        didSet {
+            if isSelected {
+                backgroundColor = .lightGray
+            } else {
+                backgroundColor = UIColor(white: 0.85, alpha: 1)
+            }
+        }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+
+        layer.masksToBounds = true
+        layer.cornerRadius = 16
+        backgroundColor = UIColor(white: 0.85, alpha: 1)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
 final class ListViewController: UIViewController, ListLoaderDelegate {
 
     weak var delegate: ListViewControllerDelegate?
@@ -152,10 +201,17 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
     private let loadButton = UIButton()
     private let continueButton = UIButton()
     private let stackView = UIStackView()
+    private let filtersStackView = UIStackView()
 
     private let listLoader = ListLoader()
 
     private var currentPage = 1
+    private lazy var selectedFilter: ListLoader.Filter = listLoader.filters[0] {
+        didSet {
+            currentPage = 1
+            updateSelectedFilter()
+        }
+    }
     private var items: [Item] = []
 
     private let pageButtonsView = PageButtonsView()
@@ -183,8 +239,40 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         activityIndicator.hidesWhenStopped = true
         view.addSubview(activityIndicator)
 
+        let filtersScrollView = UIScrollView()
+        filtersScrollView.translatesAutoresizingMaskIntoConstraints = false
+        filtersScrollView.showsHorizontalScrollIndicator = false
+        filtersScrollView.contentInset = .init(top: 0, left: 16, bottom: 0, right: 16)
+        view.addSubview(filtersScrollView)
+
+        filtersStackView.translatesAutoresizingMaskIntoConstraints = false
+        filtersStackView.axis = .horizontal
+        filtersStackView.alignment = .center
+        filtersStackView.spacing = 12
+        filtersScrollView.addSubview(filtersStackView)
+
+        listLoader.filters.enumerated().forEach { index, filter in
+            let filterView = FilterView()
+            filterView.label.text = filter.name
+            filterView.tag = index
+            let tapGR = UITapGestureRecognizer(target: self, action: #selector(selectFilter(_:)))
+            filterView.addGestureRecognizer(tapGR)
+            filtersStackView.addArrangedSubview(filterView)
+        }
+
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            filtersScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            filtersScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            filtersScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+
+            filtersStackView.topAnchor.constraint(equalTo: filtersScrollView.topAnchor),
+            filtersStackView.trailingAnchor.constraint(equalTo: filtersScrollView.trailingAnchor),
+            filtersStackView.leadingAnchor.constraint(equalTo: filtersScrollView.leadingAnchor),
+            filtersStackView.bottomAnchor.constraint(equalTo: filtersScrollView.bottomAnchor),
+            filtersStackView.heightAnchor.constraint(equalToConstant: 56),
+            filtersStackView.heightAnchor.constraint(equalTo: filtersScrollView.heightAnchor),
+
+            scrollView.topAnchor.constraint(equalTo: filtersScrollView.bottomAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: pageButtonsView.topAnchor),
@@ -193,7 +281,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
             stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            scrollView.widthAnchor.constraint(equalTo: stackView.widthAnchor),
+            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
             pageButtonsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             pageButtonsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -207,7 +295,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         notificationCenter.addObserver(self,
                                        selector:#selector(appMovedToForeground),
                                        name: UIApplication.willEnterForegroundNotification, object: nil)
-
+        updateSelectedFilter()
         loadCurrentPage()
     }
 
@@ -229,6 +317,16 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
     @objc private func nextPage() {
         currentPage += 1
         loadCurrentPage()
+    }
+
+    @objc private func selectFilter(_ tapGR: UITapGestureRecognizer) {
+        guard let filterIndex = tapGR.view?.tag else {
+            return
+        }
+        if selectedFilter != listLoader.filters[filterIndex] {
+            selectedFilter = listLoader.filters[filterIndex]
+            loadCurrentPage()
+        }
     }
 
     @objc private func appMovedToForeground() {
@@ -259,11 +357,17 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         pageButtonsView.prevPageButton.isEnabled = currentPage > 1
     }
 
+    private func updateSelectedFilter() {
+        for (filterIndex, filterView) in filtersStackView.arrangedSubviews.enumerated() {
+            (filterView as! FilterView).isSelected = selectedFilter == listLoader.filters[filterIndex]
+        }
+    }
+
     private func loadCurrentPage() {
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
         view.alpha = 0.5
-        listLoader.loadPage(currentPage) { items in
+        listLoader.loadPage(currentPage, filter: selectedFilter) { items in
             self.view.isUserInteractionEnabled = true
             self.activityIndicator.stopAnimating()
             self.view.alpha = 1
