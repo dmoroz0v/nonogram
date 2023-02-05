@@ -299,6 +299,11 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         loadCurrentPage()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadCurrentPage()
+    }
+
     @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
         let index = tapGR.view?.tag ?? 0
         let item = items[index]
