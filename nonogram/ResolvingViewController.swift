@@ -29,7 +29,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
-class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
+class ResolvingViewController: UIViewController {
 
     enum UpdateAction {
         case selectLayer(penColor: Field.Color)
@@ -224,7 +224,7 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         }
     }
 
-    func strikeEmptyCellsIfResolved(row: Int) {
+    private func strikeEmptyCellsIfResolved(row: Int) -> Bool {
         var rowIsResolved = true
         for columnIndex in 0..<field.size.columns {
             if let selectedLayerColor {
@@ -243,9 +243,10 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
                 }
             }
         }
+        return rowIsResolved
     }
 
-    func strikeEmptyCellsIfResolved(column: Int) {
+    private func strikeEmptyCellsIfResolved(column: Int) -> Bool {
         var columnIsResolved = true
         for rowIndex in 0..<field.size.rows {
             if let selectedLayerColor {
@@ -264,9 +265,10 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
                 }
             }
         }
+        return columnIsResolved
     }
 
-    func update(with action: UpdateAction) {
+    private func update(with action: UpdateAction) {
         switch action {
         case .selectLayer(let penColor):
             self.pen = .color(penColor)
@@ -317,13 +319,6 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             }
 
             selectedLayerColor = penColor
-
-            for rowIndex in 0..<field.size.rows {
-                strikeEmptyCellsIfResolved(row: rowIndex)
-            }
-            for columnIndex in 0..<field.size.columns {
-                strikeEmptyCellsIfResolved(column: columnIndex)
-            }
         case .closeLayer:
             layers[selectedLayerColor!.id] = field
             field = sourceField
@@ -338,13 +333,6 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             }
 
             selectedLayerColor = nil
-
-            for rowIndex in 0..<field.size.rows {
-                strikeEmptyCellsIfResolved(row: rowIndex)
-            }
-            for columnIndex in 0..<field.size.columns {
-                strikeEmptyCellsIfResolved(column: columnIndex)
-            }
         }
 
         applyState()
@@ -362,12 +350,32 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         )
     }
 
-    func applyState() {
+    private func applyState() {
+
+        var isResolved = true
+        for rowIndex in 0..<field.size.rows {
+            isResolved = strikeEmptyCellsIfResolved(row: rowIndex) && isResolved
+        }
+        for columnIndex in 0..<field.size.columns {
+            isResolved = strikeEmptyCellsIfResolved(column: columnIndex) && isResolved
+        }
+
+        if isResolved && selectedLayerColor == nil {
+            showResolvedAlert()
+        }
+
         fieldView.solutionView.setNeedsDisplay()
         fieldView.horizontalDefsCell.defs = field.horizintals
         fieldView.horizontalDefsCell.setNeedsDisplay()
         fieldView.verticalDefsCell.defs = field.verticals
         fieldView.verticalDefsCell.setNeedsDisplay()
+    }
+
+    private func showResolvedAlert() {
+        let alert = UIAlertController(title: "Решено!", message: "", preferredStyle: .alert)
+        alert.popoverPresentationController?.sourceView = view
+        alert.addAction(.init(title: "Хорошо!", style: .default))
+        present(alert, animated: true)
     }
 
     private var controlsPanelViewPanPrevLocation: CGPoint?
@@ -391,6 +399,9 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
         }
     }
 
+}
+
+extension ResolvingViewController: UIPencilInteractionDelegate {
     func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
         if let selectedLayerColor {
             switch pen {
@@ -408,7 +419,6 @@ class ResolvingViewController: UIViewController, UIPencilInteractionDelegate {
             }
         }
     }
-
 }
 
 extension ResolvingViewController: NumbersViewDelegate {
@@ -496,8 +506,6 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             if let selectedLayerColor {
                 layers[selectedLayerColor.id] = field
             }
-            strikeEmptyCellsIfResolved(row: row)
-            strikeEmptyCellsIfResolved(column: column)
 
             applyState()
 
