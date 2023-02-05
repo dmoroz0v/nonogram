@@ -254,7 +254,7 @@ class NumbersView: CellView {
         ])
 
         let longPressPanGR = LongPressPanGR(target: self, action: #selector(longPressPan(_:)))
-        longPressPanGR.longPressPanView = self
+        longPressPanGR.longPressPanDelegate = self
         panView.addGestureRecognizer(longPressPanGR)
     }
 
@@ -401,12 +401,22 @@ class NumbersView: CellView {
     }
 }
 
+extension NumbersView: LongPressPanGRDelegate {
+    fileprivate func longPressPanGRIsPossibeRecognize(_ gr: LongPressPanGR) -> Bool {
+        let point = gr.location(in: self)
+        return bounds.contains(point)
+    }
+}
+
+private protocol LongPressPanGRDelegate: AnyObject {
+    func longPressPanGRIsPossibeRecognize(_: LongPressPanGR) -> Bool
+}
+
 private final class LongPressPanGR: UIGestureRecognizer {
+    weak var longPressPanDelegate: LongPressPanGRDelegate?
     private var timer: Timer?
     private var processingTouch: UITouch?
     private var startPoint: CGPoint?
-
-    weak var longPressPanView: UIView?
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if self.numberOfTouches == 2 {
@@ -415,15 +425,15 @@ private final class LongPressPanGR: UIGestureRecognizer {
             timer = nil
             return
         }
-        let point = touches.first!.location(in: longPressPanView)
-        guard longPressPanView?.bounds.contains(point) ?? true else {
+        let isPossibleRecognize = longPressPanDelegate?.longPressPanGRIsPossibeRecognize(self) ?? true
+        guard isPossibleRecognize else {
             state = .failed
             timer?.invalidate()
             timer = nil
             return
         }
         processingTouch = touches.first
-        startPoint = point
+        startPoint = touches.first!.location(in: view)
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
             if self.timer != nil {
                 self.timer?.invalidate()
@@ -446,7 +456,7 @@ private final class LongPressPanGR: UIGestureRecognizer {
             return
         }
 
-        let point = processingTouch.location(in: longPressPanView)
+        let point = processingTouch.location(in: view)
         if state == .possible && point.distance(to: startPoint) < 6 {
             return
         }
