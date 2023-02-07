@@ -15,6 +15,7 @@
 		A25E830C296FFEEE00CAC48D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A25E830B296FFEEE00CAC48D /* Assets.xcassets */; };
 		A25E830F296FFEEE00CAC48D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A25E830D296FFEEE00CAC48D /* LaunchScreen.storyboard */; };
 		A28183642975A2DE00104A3E /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28183632975A2DE00104A3E /* ListViewController.swift */; };
+		A28528F02992E8F0005D42EF /* SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = A28528EF2992E8F0005D42EF /* SQLite */; };
 		A293B3032986D8A000480EB9 /* FieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A293B3022986D8A000480EB9 /* FieldView.swift */; };
 		A2B7FD37297C15FB00A682B9 /* SolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B7FD36297C15FB00A682B9 /* SolutionView.swift */; };
 		A2C6591C2970633700FE29B7 /* ControlsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C6591B2970633700FE29B7 /* ControlsPanelView.swift */; };
@@ -54,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A28528F02992E8F0005D42EF /* SQLite in Frameworks */,
 				A2F65D68297D7141008B1C23 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -120,6 +122,7 @@
 			name = nonogram;
 			packageProductDependencies = (
 				A2F65D67297D7141008B1C23 /* SwiftSoup */,
+				A28528EF2992E8F0005D42EF /* SQLite */,
 			);
 			productName = nonogram;
 			productReference = A25E82FF296FFEEE00CAC48D /* nonogram.app */;
@@ -151,6 +154,7 @@
 			mainGroup = A25E82F6296FFEED00CAC48D;
 			packageReferences = (
 				A2F65D66297D7141008B1C23 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				A28528EE2992E8F0005D42EF /* XCRemoteSwiftPackageReference "SQLite" */,
 			);
 			productRefGroup = A25E8300296FFEEE00CAC48D /* Products */;
 			projectDirPath = "";
@@ -422,6 +426,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		A28528EE2992E8F0005D42EF /* XCRemoteSwiftPackageReference "SQLite" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stephencelis/SQLite.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.2;
+			};
+		};
 		A2F65D66297D7141008B1C23 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
@@ -433,6 +445,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A28528EF2992E8F0005D42EF /* SQLite */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A28528EE2992E8F0005D42EF /* XCRemoteSwiftPackageReference "SQLite" */;
+			productName = SQLite;
+		};
 		A2F65D67297D7141008B1C23 /* SwiftSoup */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A2F65D66297D7141008B1C23 /* XCRemoteSwiftPackageReference "SwiftSoup" */;

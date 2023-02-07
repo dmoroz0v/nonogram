@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SQLite
 
 class Storage {
     struct Data: Codable {
@@ -17,6 +18,38 @@ class Storage {
         let selectedLayerColor: Field.Color?
         let solution: [[Int]]
         let colors: [Field.Color]
+    }
+
+    private lazy var dbPath: String = {
+        func getDocumentsDirectory() -> URL {
+            let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            let documentsDirectory = paths[0]
+            return documentsDirectory
+        }
+
+        return getDocumentsDirectory().appendingPathComponent("db.sqlite3").path
+    }()
+
+    private func initDBIfNeeded() {
+        if !FileManager.default.fileExists(atPath: dbPath) {
+            initDB()
+        }
+    }
+
+    private func initDB() {
+        FileManager.default.createFile(atPath: dbPath, contents: .init())
+        do {
+            let db = try Connection(dbPath)
+            let saves = Table("saves")
+            let id = Expression<String>("id")
+            let json = Expression<String?>("json")
+
+            try db.run(saves.create { t in
+                t.column(id, primaryKey: true)
+                t.column(json)
+            })
+        } catch {
+        }
     }
 
     private var saving = false
@@ -53,12 +86,35 @@ class Storage {
         saving = true
         DispatchQueue.global().async {
 
-            let d = try? JSONEncoder().encode(data)
-            if let d = d {
-                let str = String(decoding: d, as: UTF8.self)
-                UserDefaults.standard.set(str, forKey: "Nonogram-Saved" + key)
-                UserDefaults.standard.set(str, forKey: "Nonogram-Saved-Last")
-                UserDefaults.standard.synchronize()
+            do {
+                self.initDBIfNeeded()
+
+                let jsonString = String(decoding: try JSONEncoder().encode(data), as: UTF8.self)
+
+                let db = try Connection(self.dbPath)
+
+                let saves = Table("saves")
+                let id = Expression<String>("id")
+                let json = Expression<String?>("json")
+
+                try db.transaction {
+                    let savedItem = saves.filter(id == key)
+                    if try db.scalar(savedItem.count) == 0 {
+                        let insert = saves.insert(id <- key, json <- jsonString)
+                        try db.run(insert)
+                    } else {
+                        try db.run(savedItem.update(json <- jsonString))
+                    }
+
+                    let lastSavedItem = saves.filter(id == "last")
+                    if try db.scalar(lastSavedItem.count) == 0 {
+                        let insert = saves.insert(id <- "last", json <- jsonString)
+                        try db.run(insert)
+                    } else {
+                        try db.run(lastSavedItem.update(json <- jsonString))
+                    }
+                }
+            } catch {
             }
 
             DispatchQueue.main.async {
@@ -71,15 +127,27 @@ class Storage {
     }
 
     func loadLast() -> Data? {
-        return load(key: "-Last")
+        return load(key: "last")
     }
 
     func load(key: String) -> Data? {
-        let str = UserDefaults.standard.string(forKey: "Nonogram-Saved" + key)
-        if let str = str {
-            if let d = str.data(using: .utf8) {
-                return try? JSONDecoder().decode(Data.self, from: d)
+        do {
+            self.initDBIfNeeded()
+
+            let db = try Connection(self.dbPath)
+            let saves = Table("saves")
+            let id = Expression<String>("id")
+            let json = Expression<String?>("json")
+
+            let savedItem = saves.filter(id == key)
+            for item in try db.prepare(savedItem) {
+                if let str = item[json] {
+                    if let d = str.data(using: .utf8) {
+                        return try JSONDecoder().decode(Data.self, from: d)
+                    }
+                }
             }
+        } catch {
         }
         return nil
     }
