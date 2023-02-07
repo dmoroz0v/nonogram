@@ -196,12 +196,9 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
     weak var delegate: ListViewControllerDelegate?
 
-    private let scrollView = UIScrollView()
-    private let textField = UITextField()
-    private let loadButton = UIButton()
-    private let continueButton = UIButton()
-    private let stackView = UIStackView()
-    private let filtersStackView = UIStackView()
+    private var scrollView: UIScrollView!
+    private var stackView: UIStackView!
+    private var filtersStackView: UIStackView!
 
     private let listLoader = ListLoader()
 
@@ -219,6 +216,10 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        scrollView = UIScrollView()
+        stackView = UIStackView()
+        filtersStackView = UIStackView()
 
         listLoader.delegate = self
 

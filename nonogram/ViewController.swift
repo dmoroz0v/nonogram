@@ -140,6 +140,10 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
             currentViewController.willMove(toParent: nil)
             currentViewController.view.removeFromSuperview()
             currentViewController.removeFromParent()
+
+            if currentViewController === listViewController {
+                listViewController.view = nil
+            }
         }
 
         currentViewController = vc
