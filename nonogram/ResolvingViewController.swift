@@ -409,6 +409,38 @@ extension ResolvingViewController: UIPencilInteractionDelegate {
                 pen = .empty
             }
         }
+
+        let penSwhitchedView: UIView
+        switch pen {
+        case .empty:
+            let emptyView = ControlsPanelView.EmptyView(dotRadius: 4)
+            penSwhitchedView = emptyView
+        case .color(let c):
+            let coloredView = UIView()
+            coloredView.backgroundColor = c.c
+            penSwhitchedView = coloredView
+        }
+
+        penSwhitchedView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(penSwhitchedView)
+
+        penSwhitchedView.layer.shadowOpacity = 0.2
+        penSwhitchedView.layer.shadowColor = UIColor.black.cgColor
+        penSwhitchedView.layer.shadowRadius = 12
+        penSwhitchedView.layer.cornerRadius = 12
+
+        NSLayoutConstraint.activate([
+            penSwhitchedView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            penSwhitchedView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            penSwhitchedView.widthAnchor.constraint(equalToConstant: 64),
+            penSwhitchedView.heightAnchor.constraint(equalToConstant: 64),
+        ])
+
+        UIView.animate(withDuration: 0.25, delay: 0.5, animations: {
+            penSwhitchedView.alpha = 0
+        }, completion: { _ in
+            penSwhitchedView.removeFromSuperview()
+        })
     }
 }
 

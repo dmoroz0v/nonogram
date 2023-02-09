@@ -182,18 +182,19 @@ class NumbersView: CellView {
             let cellAspectSize = numbersView.cellAspectSize
             let defs = numbersView.defs
             let offset = numbersView.offset
+            let defsIndex: Int
+            let defIndex: Int
             if numbersView.axis == .horizontal {
-                let defsIndex = Int(location.y / cellAspectSize)
-                let defIndex = Int(location.x / cellAspectSize) - (offset - defs[defsIndex].count)
-                if defIndex >= 0 {
-                    pickColorHandler?(defs[defsIndex][defIndex].color)
-                }
+                defsIndex = Int(location.y / cellAspectSize)
+                defIndex = Int(location.x / cellAspectSize) - (offset - defs[defsIndex].count)
             } else {
-                let defsIndex = Int(location.x / cellAspectSize)
-                let defIndex = Int(location.y / cellAspectSize) - (offset - defs[defsIndex].count)
-                if defIndex >= 0 {
-                    pickColorHandler?(defs[defsIndex][defIndex].color)
-                }
+                defsIndex = Int(location.x / cellAspectSize)
+                defIndex = Int(location.y / cellAspectSize) - (offset - defs[defsIndex].count)
+            }
+            if defIndex >= 0 {
+                let pickedColor = defs[defsIndex][defIndex].color
+                numbersView.showPickColorAnimation(with: pickedColor, defsIndex: defsIndex, defIndex: defIndex)
+                pickColorHandler?(pickedColor)
             }
         }
     }
@@ -267,8 +268,8 @@ class NumbersView: CellView {
         cv.setNeedsDisplay()
     }
 
-    var startSelectedDef: (row: Int, column: Int)?
-    var endSelectedDef: (row: Int, column: Int)?
+    private var startSelectedDef: (row: Int, column: Int)?
+    private var endSelectedDef: (row: Int, column: Int)?
 
     @objc private func longPressPan(_ gr: LongPressPanGR) {
         switch gr.state {
@@ -332,29 +333,29 @@ class NumbersView: CellView {
         drawSum()
     }
 
-    private lazy var sumLabelView: UIView = {
+    private lazy var infoView: UIView = {
         let v = UIView()
         v.backgroundColor = .clear
         v.layer.shadowOpacity = 0.2
         v.layer.shadowColor = UIColor.black.cgColor
         v.layer.shadowRadius = 4
+        v.layer.cornerRadius = 4
+        v.frame.size = CGSize(width: 24, height: 24)
         return v
     }()
 
     private lazy var sumLabel: UILabel = {
         let l = UILabel()
-        l.backgroundColor = .white
-        l.layer.cornerRadius = 4
-        l.layer.masksToBounds = true
+        l.backgroundColor = .clear
         l.textAlignment = .center
         l.font = UIFont.systemFont(ofSize: 16)
-        sumLabelView.addSubview(l)
         return l
     }()
 
     func drawSum() {
         guard let startSelectedDef = startSelectedDef else {
-            sumLabelView.removeFromSuperview()
+            infoView.removeFromSuperview()
+            sumLabel.removeFromSuperview()
             setNeedsDisplay()
             return
         }
@@ -375,22 +376,24 @@ class NumbersView: CellView {
             prevDef = def
         }
 
-        if sumLabelView.superview == nil {
-            addSubview(sumLabelView)
+        if infoView.superview == nil {
+            addSubview(infoView)
         }
-        sumLabelView.frame.size = CGSize(width: 24, height: 24)
-        sumLabel.frame.size = CGSize(width: 24, height: 24)
+        infoView.backgroundColor = .white
+        infoView.alpha = 1
+        infoView.addSubview(sumLabel)
+        sumLabel.frame.size = infoView.frame.size
         sumLabel.text = "\(n)"
 
         switch axis {
         case .horizontal:
-            sumLabelView.center = CGPoint(
+            infoView.center = CGPoint(
                 x: cellAspectSize * CGFloat(maxColumn + minColumn + 1) / 2,
-                y: CGFloat(startSelectedDef.row) * cellAspectSize - 24/2
+                y: CGFloat(startSelectedDef.row) * cellAspectSize - infoView.frame.height / 2
             )
         case .vertical:
-            sumLabelView.center = CGPoint(
-                x: CGFloat(startSelectedDef.row) * cellAspectSize - 24 / 2,
+            infoView.center = CGPoint(
+                x: CGFloat(startSelectedDef.row) * cellAspectSize - infoView.frame.width / 2,
                 y: cellAspectSize * CGFloat(maxColumn + minColumn + 1) / 2
             )
         @unknown default:
@@ -398,6 +401,42 @@ class NumbersView: CellView {
         }
 
         setNeedsDisplay()
+    }
+
+    private var showPickColorAnimationContext: NSObject?
+
+    private func showPickColorAnimation(with color: Field.Color, defsIndex: Int, defIndex: Int) {
+        addSubview(infoView)
+        infoView.alpha = 1
+        infoView.backgroundColor = color.c
+        let space = offset - defs[defsIndex].count
+        switch axis {
+        case .horizontal:
+            infoView.center = CGPoint(
+                x: cellAspectSize * CGFloat(defIndex + space) + cellAspectSize / 2,
+                y: CGFloat(defsIndex) * cellAspectSize - infoView.frame.height / 2
+            )
+        case .vertical:
+            infoView.center = CGPoint(
+                x: CGFloat(defsIndex) * cellAspectSize - infoView.frame.width / 2,
+                y: cellAspectSize * CGFloat(defIndex + space) + cellAspectSize / 2
+            )
+        @unknown default:
+            break
+        }
+
+        setNeedsDisplay()
+
+        let showPickColorAnimationContext = NSObject()
+
+        UIView.animateKeyframes(withDuration: 0.25, delay: 0.5, animations: {
+            self.infoView.alpha = 0
+        }, completion: { _ in
+            if showPickColorAnimationContext === self.showPickColorAnimationContext {
+                self.infoView.removeFromSuperview()
+                self.infoView.alpha = 1
+            }
+        })
     }
 }
 
