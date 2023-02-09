@@ -40,7 +40,6 @@ class ResolvingViewController: UIViewController {
 
     // views
     private let scrollView = UIScrollView()
-    private let contentView = CellView()
     private let controlsPanelVC = ControlsPanelViewController()
     private var fieldView: FieldView!
 
@@ -133,9 +132,6 @@ class ResolvingViewController: UIViewController {
         scrollView.delegate = self
         view.addSubview(scrollView)
 
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.clipsToBounds = true
-        scrollView.addSubview(contentView)
         scrollView.contentInset = .init(top: 60, left: 40, bottom: 60, right: 40)
 
         let field: Field! = (sourceField ?? field)
@@ -156,7 +152,7 @@ class ResolvingViewController: UIViewController {
         fieldView.solutionView.delegate = self
         fieldView.solutionView.dataSource = self
 
-        contentView.contentView.addSubview(fieldView)
+        scrollView.addSubview(fieldView)
 
         controlsPanelVC.view.translatesAutoresizingMaskIntoConstraints = false
         controlsPanelVC.colors = field.colors
@@ -177,15 +173,10 @@ class ResolvingViewController: UIViewController {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-
-            fieldView.topAnchor.constraint(equalTo: contentView.contentView.topAnchor),
-            fieldView.leadingAnchor.constraint(equalTo: contentView.contentView.leadingAnchor),
-            fieldView.trailingAnchor.constraint(equalTo: contentView.contentView.trailingAnchor),
-            fieldView.bottomAnchor.constraint(equalTo: contentView.contentView.bottomAnchor),
+            fieldView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            fieldView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            fieldView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            fieldView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
 
             {
                 controlsPanelViewHotizontal = controlsPanelVC.view.leadingAnchor.constraint(
@@ -531,6 +522,6 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
 
 extension ResolvingViewController: UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-        return contentView
+        return fieldView
     }
 }
