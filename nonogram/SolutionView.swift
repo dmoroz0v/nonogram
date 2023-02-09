@@ -185,6 +185,9 @@ class SolutionView: CellView {
         let longtapGR = UILongPressGestureRecognizer(target: self, action: #selector(longtap(_:)))
         addGestureRecognizer(longtapGR)
 
+        let hoverGR = UIHoverGestureRecognizer(target: self, action: #selector(hover(_:)))
+        addGestureRecognizer(hoverGR)
+
         cv.solutionView = self
 
         let panGR = PanGR(target: self, action: #selector(pan(_:)))
@@ -234,6 +237,13 @@ class SolutionView: CellView {
 
     @objc private func longtap(_ tapGR: UITapGestureRecognizer) {
         let location = tapGR.location(in: self)
+        delegate?.solutionView(self,
+                               didLongTapColumn: Int(location.x / cellAspectSize),
+                               row: Int(location.y / cellAspectSize))
+    }
+
+    @objc private func hover(_ hoverGR: UIHoverGestureRecognizer) {
+        let location = hoverGR.location(in: self)
         delegate?.solutionView(self,
                                didLongTapColumn: Int(location.x / cellAspectSize),
                                row: Int(location.y / cellAspectSize))
