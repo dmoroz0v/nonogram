@@ -356,11 +356,11 @@ class ResolvingViewController: UIViewController {
             isResolved = strikeEmptyCellsIfResolved(column: columnIndex) && isResolved
         }
 
-        if isResolved && selectedLayerColor == nil {
+        let hasErrors = checkForError()
+
+        if !hasErrors && isResolved && selectedLayerColor == nil {
             showResolvedAlert()
         }
-
-        checkForError()
 
         fieldView.solutionView.setNeedsDisplay()
         fieldView.horizontalDefsCell.defs = field.horizintals
@@ -369,7 +369,7 @@ class ResolvingViewController: UIViewController {
         fieldView.verticalDefsCell.setNeedsDisplay()
     }
 
-    private func checkForError() {
+    private func checkForError() -> Bool {
         var errorsCount = 0
         let minErrorsCount = 5
         for rowIndex in 0..<field.size.rows {
@@ -397,6 +397,7 @@ class ResolvingViewController: UIViewController {
         } else {
             self.showsErrors = true
         }
+        return errorsCount > 0
     }
 
     private func validValue(row: Int, column: Int) -> Field.Point.Value {
