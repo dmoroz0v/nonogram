@@ -141,7 +141,10 @@ class NumbersView: CellView {
                 if point != .empty {
                     n += 1
                 }
-                if n != 0 && (pointIndex + 1 == line.count || pointIndex == 0 || line[pointIndex + increment] != point) {
+                if n != 0
+                    && (pointIndex + 1 == line.count || pointIndex == 0 || line[pointIndex + increment] != point)
+                    && defIndex >= 0 && defIndex < numbersView.defs[defsIndex].count
+                {
                     let defs = numbersView.defs[defsIndex]
                     let def = defs[defIndex]
                     if n == def.n {

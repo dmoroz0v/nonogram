@@ -34,7 +34,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
                     layers: data.layers,
                     selectedLayerColor: data.selectedLayerColor,
                     solution: data.solution,
-                    colors: data.colors
+                    colors: data.colors,
+                    showsErrors: data.showsErrors
                 )
 
                 resolvingViewController.delegate = self
@@ -101,7 +102,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         colors: [Field.Color],
         url: URL,
         thumbnail thumbnailUrl: URL,
-        title: String
+        title: String,
+        showsErrors: Bool
     ) {
         storage.save(
             key: url.absoluteString,
@@ -112,7 +114,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
             layers: layers,
             selectedLayerColor: selectedLayerColor,
             solution: solution,
-            colors: colors
+            colors: colors,
+            showsErrors: showsErrors
         )
     }
 

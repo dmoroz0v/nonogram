@@ -16,6 +16,8 @@ protocol SolutionViewDelegate: AnyObject {
 
 protocol SolutionViewDataSource: AnyObject {
     func solutionView(_: SolutionView, pointForColumn: Int, row: Int) -> Field.Point
+    func solutionView(_: SolutionView, validValueForColumn: Int, row: Int) -> Field.Point.Value
+    func solutionViewNeedShowsErrors(_: SolutionView) -> Bool
 }
 
 class SolutionView: CellView {
@@ -45,24 +47,10 @@ class SolutionView: CellView {
                         width: solutionView.cellAspectSize,
                         height: solutionView.cellAspectSize
                     )
-                    let ficusedCellInsets = UIEdgeInsets(
-                        top: 3/UIScreen.main.scale,
-                        left: 3/UIScreen.main.scale,
-                        bottom: 2/UIScreen.main.scale,
-                        right: 2/UIScreen.main.scale
-                    )
                     switch point.value {
                     case .color(let color):
                         ctx.setFillColor(color.c.cgColor)
                         ctx.fill(rectangle)
-                        if solutionView.focusedCell?.row == rowIndex,
-                           solutionView.focusedCell?.column == columnIndex {
-                            ctx.setStrokeColor(color.contrastColor.cgColor)
-                            var rectangle = rectangle
-                            rectangle = rectangle.inset(by: ficusedCellInsets)
-                            ctx.setLineWidth(1)
-                            ctx.stroke(rectangle)
-                        }
                     case .empty:
                         ctx.setFillColor(UIColor.black.cgColor)
                         let circleRect: CGRect = CGRect(
@@ -72,45 +60,51 @@ class SolutionView: CellView {
                             height: 0.2 * solutionView.cellAspectSize
                         )
                         ctx.fillEllipse(in: circleRect)
-                        if solutionView.focusedCell?.row == rowIndex,
-                           solutionView.focusedCell?.column == columnIndex {
-                            ctx.setStrokeColor(UIColor.gray.cgColor)
-                            var rectangle = rectangle
-                            rectangle = rectangle.inset(by: ficusedCellInsets)
-                            ctx.setLineWidth(1)
-                            ctx.stroke(rectangle)
-                        }
                     case .none:
-                        if solutionView.focusedCell?.row == rowIndex,
-                           solutionView.focusedCell?.column == columnIndex {
-                            ctx.setStrokeColor(UIColor.gray.cgColor)
-                            var rectangle = rectangle
-                            rectangle = rectangle.inset(by: ficusedCellInsets)
+                        break
+                    }
+
+                    if solutionView.focusedCell?.row == rowIndex,
+                       solutionView.focusedCell?.column == columnIndex {
+
+                        let ficusedCellInsets = UIEdgeInsets(
+                            top: 3/UIScreen.main.scale,
+                            left: 3/UIScreen.main.scale,
+                            bottom: 2/UIScreen.main.scale,
+                            right: 2/UIScreen.main.scale
+                        )
+
+                        ctx.setStrokeColor(point.contrastColor.cgColor)
+                        var rectangle = rectangle
+                        rectangle = rectangle.inset(by: ficusedCellInsets)
+                        ctx.setLineWidth(1)
+                        ctx.stroke(rectangle)
+                    }
+
+                    if let value = point.value, solutionView.dataSource!.solutionViewNeedShowsErrors(solutionView) {
+                        let validValue = solutionView.dataSource!.solutionView(solutionView, validValueForColumn: columnIndex, row: rowIndex)
+                        if validValue != value {
+                            let cellAspectSize = solutionView.cellAspectSize
+
+                            var rectangle = CGRect(
+                                x: cellAspectSize * CGFloat(columnIndex),
+                                y: cellAspectSize * CGFloat(rowIndex),
+                                width: cellAspectSize,
+                                height: cellAspectSize
+                            )
+                            rectangle = rectangle.insetBy(dx: 2, dy: 2)
+                            ctx.setStrokeColor(value.contrastColor.cgColor)
                             ctx.setLineWidth(1)
-                            ctx.stroke(rectangle)
+                            ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
+                            ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
+                            ctx.strokePath()
+                            ctx.move(to: CGPoint(x: rectangle.maxX, y: rectangle.minY))
+                            ctx.addLine(to: CGPoint(x: rectangle.minX, y: rectangle.maxY))
+                            ctx.strokePath()
                         }
                     }
                 }
             }
-        }
-
-        func showError(row: Int, column: Int) {
-            let image = UIImage(named: "error")
-            let imageView = UIImageView(image: image)
-            imageView.frame = CGRect(
-                x: CGFloat(column) * solutionView.cellAspectSize,
-                y: CGFloat(row) * solutionView.cellAspectSize,
-                width: solutionView.cellAspectSize,
-                height: solutionView.cellAspectSize
-            )
-            addSubview(imageView)
-            imageView.transform = .init(scaleX: 0.8, y: 0.8)
-            UIView.animate(withDuration: 0.3, animations: {
-                imageView.transform = .init(scaleX: 1.2, y: 1.2)
-                imageView.alpha = 0
-            }, completion: { _ in
-                imageView.removeFromSuperview()
-            })
         }
     }
 
@@ -222,10 +216,6 @@ class SolutionView: CellView {
                 height: bounds.height
             )
         }
-    }
-
-    func showError(row: Int, column: Int) {
-        cv.showError(row: row, column: column)
     }
 
     @objc private func tap(_ tapGR: UITapGestureRecognizer) {

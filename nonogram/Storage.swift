@@ -18,6 +18,7 @@ class Storage {
         let selectedLayerColor: Field.Color?
         let solution: [[Int]]
         let colors: [Field.Color]
+        let showsErrors: Bool
     }
 
     private lazy var dbPath: String = {
@@ -63,7 +64,8 @@ class Storage {
               layers: [String: Field],
               selectedLayerColor: Field.Color?,
               solution: [[Int]],
-              colors: [Field.Color]
+              colors: [Field.Color],
+              showsErrors: Bool
     ) {
         let data = Data(
             url: url,
@@ -73,7 +75,8 @@ class Storage {
             layers: layers,
             selectedLayerColor: selectedLayerColor,
             solution: solution,
-            colors: colors
+            colors: colors,
+            showsErrors: showsErrors
         )
         if saving {
             self.pendingData = data

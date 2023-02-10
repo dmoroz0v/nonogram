@@ -67,11 +67,29 @@ struct Field: Codable {
         enum Value: Codable, Equatable {
             case color(Color)
             case empty
+
+            var contrastColor: UIColor {
+                switch self {
+                case .color(let c):
+                    return c.contrastColor
+                case .empty:
+                    return UIColor.gray
+                }
+            }
         }
         var value: Value?
 
         static let undefined = Point(value: nil)
         static let empty = Point(value: .empty)
+
+        var contrastColor: UIColor {
+            switch value {
+            case .color(let c):
+                return c.contrastColor
+            case .empty, .none:
+                return UIColor.gray
+            }
+        }
     }
 
     struct Definition: Codable {

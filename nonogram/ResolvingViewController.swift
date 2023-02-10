@@ -23,7 +23,8 @@ protocol ResolvingViewControllerDelegate: AnyObject {
         colors: [Field.Color],
         url: URL,
         thumbnail thumbnailUrl: URL,
-        title: String
+        title: String,
+        showsErrors: Bool
     )
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
@@ -54,6 +55,7 @@ class ResolvingViewController: UIViewController {
     private var field: Field!
     private var sourceField: Field!
     private var layers: [String: Field] = [:]
+    private var showsErrors: Bool = false
     private var selectedLayerColor: Field.Color? {
         didSet {
             controlsPanelVC.selectedLayerColor = selectedLayerColor
@@ -102,7 +104,8 @@ class ResolvingViewController: UIViewController {
         layers: [String: Field],
         selectedLayerColor: Field.Color?,
         solution: [[Int]],
-        colors: [Field.Color]
+        colors: [Field.Color],
+        showsErrors: Bool
     ) {
         self.url = url
         self.thumbnailUrl = thumbnailUrl
@@ -116,6 +119,7 @@ class ResolvingViewController: UIViewController {
         }
         self.solution = solution
         self.colors = colors
+        self.showsErrors = showsErrors
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -337,7 +341,8 @@ class ResolvingViewController: UIViewController {
             colors: colors,
             url: url,
             thumbnail: thumbnailUrl,
-            title: crosswordTitle
+            title: crosswordTitle,
+            showsErrors: showsErrors
         )
     }
 
@@ -355,11 +360,61 @@ class ResolvingViewController: UIViewController {
             showResolvedAlert()
         }
 
+        checkForError()
+
         fieldView.solutionView.setNeedsDisplay()
         fieldView.horizontalDefsCell.defs = field.horizintals
         fieldView.horizontalDefsCell.setNeedsDisplay()
         fieldView.verticalDefsCell.defs = field.verticals
         fieldView.verticalDefsCell.setNeedsDisplay()
+    }
+
+    private func checkForError() {
+        var errorsCount = 0
+        let minErrorsCount = 5
+        for rowIndex in 0..<field.size.rows {
+            for columntIndex in 0..<field.size.columns {
+                let validValue: Field.Point.Value = validValue(row: rowIndex, column: columntIndex)
+                let point = field.points[rowIndex][columntIndex]
+                if point != .undefined {
+                    if validValue != point.value {
+                        errorsCount += 1
+                        if errorsCount == minErrorsCount {
+                            break
+                        }
+                    }
+                }
+            }
+            if errorsCount == minErrorsCount {
+                break
+            }
+        }
+        let showsErrors = (errorsCount >= minErrorsCount)
+        if !showsErrors {
+            if errorsCount == 0 {
+                self.showsErrors = false
+            }
+        } else {
+            self.showsErrors = true
+        }
+    }
+
+    private func validValue(row: Int, column: Int) -> Field.Point.Value {
+        let s = solution[row][column]
+        if s == 0 {
+            return .empty
+        } else {
+            let color = colors[s - 1]
+            if let selectedLayerColor {
+                if selectedLayerColor.id == color.id {
+                    return .color(color)
+                } else {
+                    return .empty
+                }
+            } else {
+                return .color(color)
+            }
+        }
     }
 
     private func showResolvedAlert() {
@@ -483,6 +538,14 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
         return field.points[row][column]
     }
 
+    func solutionView(_: SolutionView, validValueForColumn column: Int, row: Int) -> Field.Point.Value {
+        return validValue(row: row, column: column)
+    }
+
+    func solutionViewNeedShowsErrors(_: SolutionView) -> Bool {
+        return showsErrors
+    }
+
     func solutionView(_ solutionView: SolutionView, didLongTapColumn column: Int, row: Int) {
         fieldView.horizontalDefsCell.focusedIndex = row
         fieldView.verticalDefsCell.focusedIndex = column
@@ -490,10 +553,6 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
     }
 
     func solutionView(_ solutionView: SolutionView, didTouchColumn column: Int, row: Int) -> Bool {
-        if field.points[row][column] != .undefined {
-            return true
-        }
-
         var newValue: Field.Point
         switch pen {
         case .empty:
@@ -502,53 +561,36 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             newValue = .init(value: .color(c))
         }
 
-        var validValue: Field.Point
-        let s = solution[row][column]
-        if s == 0 {
-            validValue = .empty
-        } else {
-            let color = colors[s - 1]
-            if let selectedLayerColor {
-                if selectedLayerColor.id == color.id {
-                    validValue = .init(value: .color(color))
-                } else {
-                    validValue = .empty
-                }
-            } else {
-                validValue = .init(value: .color(color))
-            }
-        }
-
-        if validValue == newValue {
+        if field.points[row][column] != newValue {
             field.points[row][column] = newValue
-
-            fieldView.horizontalDefsCell.focusedIndex = row
-            fieldView.verticalDefsCell.focusedIndex = column
-            solutionView.focusedCell = (row: row, column: column)
-
-            if let selectedLayerColor {
-                layers[selectedLayerColor.id] = field
-            }
-
-            applyState()
-
-            delegate?.resolvingViewController(
-                self,
-                didChangeState: sourceField ?? field,
-                layers: layers,
-                selectedLayerColor: selectedLayerColor,
-                solution: solution,
-                colors: colors,
-                url: url,
-                thumbnail: thumbnailUrl,
-                title: crosswordTitle
-            )
-
-            return false
         } else {
-            solutionView.showError(row: row, column: column)
-            return true
+            field.points[row][column] = .undefined
         }
+
+        fieldView.horizontalDefsCell.focusedIndex = row
+        fieldView.verticalDefsCell.focusedIndex = column
+        solutionView.focusedCell = (row: row, column: column)
+
+        if let selectedLayerColor {
+            layers[selectedLayerColor.id] = field
+        }
+
+        applyState()
+
+        delegate?.resolvingViewController(
+            self,
+            didChangeState: sourceField ?? field,
+            layers: layers,
+            selectedLayerColor: selectedLayerColor,
+            solution: solution,
+            colors: colors,
+            url: url,
+            thumbnail: thumbnailUrl,
+            title: crosswordTitle,
+            showsErrors: showsErrors
+        )
+
+        return false
     }
 }
 
