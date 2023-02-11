@@ -8,7 +8,16 @@
 import Foundation
 import SQLite
 
-class Storage {
+final class Storage {
+
+    private struct SavesTableDefinition {
+        static let table = Table("saves")
+        static let id = Expression<String>("id")
+        static let json = Expression<String>("json")
+        static let modifiedDate = Expression<Date>("modifiedDate")
+        private init() { }
+    }
+
     struct Data: Codable {
         let url: URL
         let thumbnail: URL
@@ -28,7 +37,7 @@ class Storage {
             return documentsDirectory
         }
 
-        return getDocumentsDirectory().appendingPathComponent("db.sqlite3").path
+        return getDocumentsDirectory().appendingPathComponent("db_2.sqlite3").path
     }()
 
     private func initDBIfNeeded() {
@@ -41,13 +50,11 @@ class Storage {
         FileManager.default.createFile(atPath: dbPath, contents: .init())
         do {
             let db = try Connection(dbPath)
-            let saves = Table("saves")
-            let id = Expression<String>("id")
-            let json = Expression<String?>("json")
 
-            try db.run(saves.create { t in
-                t.column(id, primaryKey: true)
-                t.column(json)
+            try db.run(SavesTableDefinition.table.create { t in
+                t.column(SavesTableDefinition.id, primaryKey: true)
+                t.column(SavesTableDefinition.json)
+                t.column(SavesTableDefinition.modifiedDate)
             })
         } catch {
         }
@@ -96,26 +103,17 @@ class Storage {
 
                 let db = try Connection(self.dbPath)
 
-                let saves = Table("saves")
-                let id = Expression<String>("id")
-                let json = Expression<String?>("json")
+                let saves = SavesTableDefinition.table
+                let id = SavesTableDefinition.id
+                let json = SavesTableDefinition.json
+                let modifiedDate = SavesTableDefinition.modifiedDate
 
-                try db.transaction {
-                    let savedItem = saves.filter(id == key)
-                    if try db.scalar(savedItem.count) == 0 {
-                        let insert = saves.insert(id <- key, json <- jsonString)
-                        try db.run(insert)
-                    } else {
-                        try db.run(savedItem.update(json <- jsonString))
-                    }
-
-                    let lastSavedItem = saves.filter(id == "last")
-                    if try db.scalar(lastSavedItem.count) == 0 {
-                        let insert = saves.insert(id <- "last", json <- jsonString)
-                        try db.run(insert)
-                    } else {
-                        try db.run(lastSavedItem.update(json <- jsonString))
-                    }
+                let savedItem = saves.filter(id == key)
+                if try db.scalar(savedItem.count) == 0 {
+                    let insert = saves.insert(id <- key, json <- jsonString, modifiedDate <- Date())
+                    try db.run(insert)
+                } else {
+                    try db.run(savedItem.update(json <- jsonString, modifiedDate <- Date()))
                 }
             } catch {
             }
@@ -130,24 +128,34 @@ class Storage {
     }
 
     func loadLast() -> Data? {
-        return load(key: "last")
+        return _load(key: nil)
     }
 
     func load(key: String) -> Data? {
+        return _load(key: key)
+    }
+
+    private func _load(key: String?) -> Data? {
         do {
             self.initDBIfNeeded()
 
             let db = try Connection(self.dbPath)
-            let saves = Table("saves")
-            let id = Expression<String>("id")
-            let json = Expression<String?>("json")
 
-            let savedItem = saves.filter(id == key)
+            let saves = SavesTableDefinition.table
+            let id = SavesTableDefinition.id
+            let json = SavesTableDefinition.json
+            let modifiedDate = SavesTableDefinition.modifiedDate
+
+            let savedItem: QueryType
+            if let key {
+                savedItem = saves.filter(id == key)
+            } else {
+                savedItem = saves.order(modifiedDate.desc)
+            }
             for item in try db.prepare(savedItem) {
-                if let str = item[json] {
-                    if let d = str.data(using: .utf8) {
-                        return try JSONDecoder().decode(Data.self, from: d)
-                    }
+                let str = item[json]
+                if let d = str.data(using: .utf8) {
+                    return try JSONDecoder().decode(Data.self, from: d)
                 }
             }
         } catch {
