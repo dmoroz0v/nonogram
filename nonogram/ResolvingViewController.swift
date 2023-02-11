@@ -420,7 +420,6 @@ class ResolvingViewController: UIViewController {
 
     private func showResolvedAlert() {
         let alert = UIAlertController(title: "Решено!", message: "", preferredStyle: .alert)
-        alert.popoverPresentationController?.sourceView = view
         alert.addAction(.init(title: "Хорошо!", style: .default))
         present(alert, animated: true)
     }

@@ -387,7 +387,6 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
     private func showErrorAlert() {
         let alert = UIAlertController(title: nil, message: "Ошибка", preferredStyle: .alert)
-        alert.popoverPresentationController?.sourceView = view
         alert.addAction(.init(title: "Повторить", style: .default, handler: { _ in
             self.loadCurrentPage()
         }))

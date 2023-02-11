@@ -21,7 +21,6 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         title: String) {
         if let data = storage.load(key: url.absoluteString) {
             let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
-            alert.popoverPresentationController?.sourceView = view
             alert.addAction(.init(title: "Новая", style: .default, handler: { _ in
                 self.loadCrossword(url: url, thumbnail: thumbnailUrl, title: title)
             }))
