@@ -222,13 +222,17 @@ class ResolvingViewController: UIViewController {
     private func strikeEmptyCellsIfResolved(row: Int) -> Bool {
         var rowIsResolved = true
         for columnIndex in 0..<field.size.columns {
-            if let selectedLayerColor {
-                let index = colors.firstIndex { $0.id == selectedLayerColor.id }! + 1
-                if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] == index {
+            let validValue = validValue(row: row, column: columnIndex)
+            let point = field.points[row][columnIndex]
+            switch validValue {
+            case .empty:
+                if point != .undefined && point != .empty {
                     rowIsResolved = false
                 }
-            } else if field.points[row][columnIndex] == .undefined && solution[row][columnIndex] > 0 {
-                rowIsResolved = false
+            case .color:
+                if point.value != validValue {
+                    rowIsResolved = false
+                }
             }
         }
         if rowIsResolved {
@@ -244,13 +248,17 @@ class ResolvingViewController: UIViewController {
     private func strikeEmptyCellsIfResolved(column: Int) -> Bool {
         var columnIsResolved = true
         for rowIndex in 0..<field.size.rows {
-            if let selectedLayerColor {
-                let index = colors.firstIndex { $0.id == selectedLayerColor.id }! + 1
-                if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] == index {
+            let validValue = validValue(row: rowIndex, column: column)
+            let point = field.points[rowIndex][column]
+            switch validValue {
+            case .empty:
+                if point != .undefined && point != .empty {
                     columnIsResolved = false
                 }
-            } else if field.points[rowIndex][column] == .undefined && solution[rowIndex][column] > 0 {
-                columnIsResolved = false
+            case .color:
+                if point.value != validValue {
+                    columnIsResolved = false
+                }
             }
         }
         if columnIsResolved {
