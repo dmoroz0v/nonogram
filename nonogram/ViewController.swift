@@ -10,7 +10,6 @@ import UIKit
 class ViewController: UIViewController, ResolvingViewControllerDelegate, ListViewControllerDelegate {
 
     private var currentViewController: UIViewController?
-    private lazy var listViewController = ListViewController()
     private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
@@ -119,12 +118,15 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
+        let listViewController = ListViewController()
+        listViewController.delegate = self
         showVC(listViewController)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let listViewController = ListViewController()
         listViewController.delegate = self
         showVC(listViewController)
 
@@ -142,10 +144,6 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
             currentViewController.willMove(toParent: nil)
             currentViewController.view.removeFromSuperview()
             currentViewController.removeFromParent()
-
-            if currentViewController === listViewController {
-                listViewController.view = nil
-            }
         }
 
         currentViewController = vc

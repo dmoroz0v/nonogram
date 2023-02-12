@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import SwiftSoup
+import SwiftUI
 
 protocol ListViewControllerDelegate: AnyObject {
     func listViewController(
@@ -202,7 +203,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
     private let listLoader = ListLoader()
 
-    private var currentPage = 1
+    @AppStorage("current_page") private var currentPage = 1
     private lazy var selectedFilter: ListLoader.Filter = listLoader.filters[0] {
         didSet {
             currentPage = 1
