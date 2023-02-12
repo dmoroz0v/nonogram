@@ -195,6 +195,52 @@ final class FilterView: UIView {
 
 final class ListViewController: UIViewController, ListLoaderDelegate {
 
+    private class StateManager {
+        func saveState(_ state: State) {
+            do {
+                let jsonString = String(decoding: try JSONEncoder().encode(state), as: UTF8.self)
+                UserDefaults.standard.set(jsonString, forKey: "NanoApp.List.State")
+                UserDefaults.standard.synchronize()
+            } catch {
+            }
+        }
+
+        func loadState() -> State? {
+            do {
+                let str = UserDefaults.standard.string(forKey: "NanoApp.List.State")
+                if let str, let d = str.data(using: .utf8) {
+                    return try JSONDecoder().decode(State.self, from: d)
+                }
+            } catch {
+            }
+            return nil
+        }
+
+        func isValid(state: State, with filters: [ListLoader.Filter]) -> Bool {
+            let stateFilersNames = state.filters.map { $0.name }
+            let filtersNames = filters.map { $0.name }
+            return stateFilersNames == filtersNames
+        }
+    }
+
+    private struct State: Codable, Equatable {
+        struct Filter: Codable, Equatable {
+            var name: String
+            var page: Int
+        }
+        var currentFilter: Int
+        var filters: [Filter]
+
+        var currentPage: Int {
+            get {
+                filters[currentFilter].page
+            }
+            set {
+                filters[currentFilter].page = newValue
+            }
+        }
+    }
+
     weak var delegate: ListViewControllerDelegate?
 
     private var scrollView: UIScrollView!
@@ -202,18 +248,40 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
     private var filtersStackView: UIStackView!
 
     private let listLoader = ListLoader()
+    private let stateManager = StateManager()
 
-    @AppStorage("current_page") private var currentPage = 1
-    private lazy var selectedFilter: ListLoader.Filter = listLoader.filters[0] {
+    private var state: State {
         didSet {
-            currentPage = 1
+            stateManager.saveState(state)
+            loadCurrentPage()
             updateSelectedFilter()
         }
     }
+
+    private var selectedFilter: ListLoader.Filter {
+        return listLoader.filters[state.currentFilter]
+    }
+
     private var items: [Item] = []
 
     private let pageButtonsView = PageButtonsView()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
+
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        let state = stateManager.loadState()
+        if let state, stateManager.isValid(state: state, with: listLoader.filters) {
+            self.state = state
+        } else {
+            self.state = State(currentFilter: 0, filters: listLoader.filters.map({
+                .init(name: $0.name, page: 1)
+            }))
+        }
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -301,11 +369,6 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         loadCurrentPage()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        loadCurrentPage()
-    }
-
     @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
         let index = tapGR.view?.tag ?? 0
         let item = items[index]
@@ -317,13 +380,11 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
     }
 
     @objc private func prevPage() {
-        currentPage -= 1
-        loadCurrentPage()
+        state.currentPage -= 1
     }
 
     @objc private func nextPage() {
-        currentPage += 1
-        loadCurrentPage()
+        state.currentPage += 1
     }
 
     @objc private func selectFilter(_ tapGR: UITapGestureRecognizer) {
@@ -331,8 +392,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
             return
         }
         if selectedFilter != listLoader.filters[filterIndex] {
-            selectedFilter = listLoader.filters[filterIndex]
-            loadCurrentPage()
+            state.currentFilter = filterIndex
         }
     }
 
@@ -361,7 +421,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
         scrollView.contentOffset = .zero
 
-        pageButtonsView.prevPageButton.isEnabled = currentPage > 1
+        pageButtonsView.prevPageButton.isEnabled = state.currentPage > 1
     }
 
     private func updateSelectedFilter() {
@@ -374,7 +434,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
         view.alpha = 0.5
-        listLoader.loadPage(currentPage, filter: selectedFilter) { items in
+        listLoader.loadPage(state.currentPage, filter: selectedFilter) { items in
             self.view.isUserInteractionEnabled = true
             self.activityIndicator.stopAnimating()
             self.view.alpha = 1
