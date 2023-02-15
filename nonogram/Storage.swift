@@ -10,6 +10,10 @@ import SQLite
 
 final class Storage {
 
+    private enum State {
+        case saving, pendingData(Data)
+    }
+
     private struct SavesTableDefinition {
         static let table = Table("saves")
         static let id = Expression<String>("id")
@@ -30,38 +34,17 @@ final class Storage {
         let showsErrors: Bool
     }
 
-    private lazy var dbPath: String = {
+    private lazy var dbUrl: URL = {
         func getDocumentsDirectory() -> URL {
             let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
             let documentsDirectory = paths[0]
             return documentsDirectory
         }
 
-        return getDocumentsDirectory().appendingPathComponent("db_2.sqlite3").path
+        return getDocumentsDirectory().appendingPathComponent("db_2.sqlite3")
     }()
 
-    private func initDBIfNeeded() {
-        if !FileManager.default.fileExists(atPath: dbPath) {
-            initDB()
-        }
-    }
-
-    private func initDB() {
-        FileManager.default.createFile(atPath: dbPath, contents: .init())
-        do {
-            let db = try Connection(dbPath)
-
-            try db.run(SavesTableDefinition.table.create { t in
-                t.column(SavesTableDefinition.id, primaryKey: true)
-                t.column(SavesTableDefinition.json)
-                t.column(SavesTableDefinition.modifiedDate)
-            })
-        } catch {
-        }
-    }
-
-    private var saving = false
-    private var pendingData: Data?
+    private var state: [String: State] = [:]
 
     func save(key: String,
               url: URL,
@@ -85,46 +68,11 @@ final class Storage {
             colors: colors,
             showsErrors: showsErrors
         )
-        if saving {
-            self.pendingData = data
+        if case .saving = state[key] {
+            state[key] = .pendingData(data)
             return
         }
         save(data, key: key)
-    }
-
-    private func save(_ data: Data, key: String) {
-        saving = true
-        DispatchQueue.global().async {
-
-            do {
-                self.initDBIfNeeded()
-
-                let jsonString = String(decoding: try JSONEncoder().encode(data), as: UTF8.self)
-
-                let db = try Connection(self.dbPath)
-
-                let saves = SavesTableDefinition.table
-                let id = SavesTableDefinition.id
-                let json = SavesTableDefinition.json
-                let modifiedDate = SavesTableDefinition.modifiedDate
-
-                let savedItem = saves.filter(id == key)
-                if try db.scalar(savedItem.count) == 0 {
-                    let insert = saves.insert(id <- key, json <- jsonString, modifiedDate <- Date())
-                    try db.run(insert)
-                } else {
-                    try db.run(savedItem.update(json <- jsonString, modifiedDate <- Date()))
-                }
-            } catch {
-            }
-
-            DispatchQueue.main.async {
-                self.saving = false
-                if let data = self.pendingData {
-                    self.save(data, key: key)
-                }
-            }
-        }
     }
 
     func loadLast() -> Data? {
@@ -135,12 +83,59 @@ final class Storage {
         return _load(key: key)
     }
 
+    private func initDBIfNeeded() {
+        let needsInitDB = !FileManager.default.fileExists(atPath: dbUrl.path)
+        if needsInitDB {
+            FileManager.default.createFile(atPath: dbUrl.path, contents: .init())
+            do {
+                let db = try Connection(dbUrl.path)
+
+                try db.run(SavesTableDefinition.table.create { t in
+                    t.column(SavesTableDefinition.id, primaryKey: true)
+                    t.column(SavesTableDefinition.json)
+                    t.column(SavesTableDefinition.modifiedDate)
+                })
+            } catch {
+            }
+        }
+    }
+
+    private func save(_ data: Data, key: String) {
+        state[key] = .saving
+        DispatchQueue.global().async {
+            do {
+                let jsonString = String(decoding: try JSONEncoder().encode(data), as: UTF8.self)
+
+                let saves = SavesTableDefinition.table
+                let id = SavesTableDefinition.id
+                let json = SavesTableDefinition.json
+                let modifiedDate = SavesTableDefinition.modifiedDate
+
+                let savedItem = saves.filter(id == key)
+
+                let db = try Connection(self.dbUrl.path)
+
+                if try db.scalar(savedItem.count) == 0 {
+                    let insert = saves.insert(id <- key, json <- jsonString, modifiedDate <- Date())
+                    try db.run(insert)
+                } else {
+                    try db.run(savedItem.update(json <- jsonString, modifiedDate <- Date()))
+                }
+            } catch {
+            }
+
+            DispatchQueue.main.async {
+                let stateForKey = self.state[key]
+                self.state[key] = nil
+                if case .pendingData(let data) = stateForKey {
+                    self.save(data, key: key)
+                }
+            }
+        }
+    }
+
     private func _load(key: String?) -> Data? {
         do {
-            self.initDBIfNeeded()
-
-            let db = try Connection(self.dbPath)
-
             let saves = SavesTableDefinition.table
             let id = SavesTableDefinition.id
             let json = SavesTableDefinition.json
@@ -152,6 +147,9 @@ final class Storage {
             } else {
                 savedItem = saves.order(modifiedDate.desc)
             }
+
+            let db = try Connection(self.dbUrl.path)
+
             for item in try db.prepare(savedItem) {
                 let str = item[json]
                 if let d = str.data(using: .utf8) {

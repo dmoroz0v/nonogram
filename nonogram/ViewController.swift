@@ -89,7 +89,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
         }
     }
 
-    var storage: Storage = Storage()
+    private let storage = Storage()
 
     func resolvingViewController(
         _ vc: ResolvingViewController,
