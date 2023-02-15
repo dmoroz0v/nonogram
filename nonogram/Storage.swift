@@ -24,7 +24,7 @@ final class Storage {
 
     struct Data: Codable {
         let url: URL
-        let thumbnail: URL
+        let thumbnailUrl: URL
         let title: String
         let field: Field
         let layers: [String: Field]
@@ -48,7 +48,7 @@ final class Storage {
 
     func save(key: String,
               url: URL,
-              thumbnail thumbnailUrl: URL,
+              thumbnailUrl: URL,
               title: String,
               field: Field,
               layers: [String: Field],
@@ -59,7 +59,7 @@ final class Storage {
     ) {
         let data = Data(
             url: url,
-            thumbnail: thumbnailUrl,
+            thumbnailUrl: thumbnailUrl,
             title: title,
             field: field,
             layers: layers,

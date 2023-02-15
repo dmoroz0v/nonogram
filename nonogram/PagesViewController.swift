@@ -11,18 +11,7 @@ import SwiftSoup
 import SwiftUI
 
 protocol PagesViewControllerDelegate: AnyObject {
-    func pagesViewController(
-        _: PagesViewController,
-        selectWithUrl: URL,
-        thumbnail: URL,
-        title: String)
-}
-
-struct Item {
-    var url: URL
-    var iocnURL: URL
-    var name: String
-    var image: UIImage?
+    func pagesViewController(_: PagesViewController, didSelectItem: ListItem)
 }
 
 final class PageButtonsView: UIView {
@@ -79,7 +68,7 @@ final class PagesLoader {
 
     private var isLoading = false
 
-    func loadPage(_ page: Int, filter: Filter, completaion: @escaping (_ items: [Item]?) -> Void) {
+    func loadPage(_ page: Int, filter: Filter, completaion: @escaping (_ items: [ListItem]?) -> Void) {
         if isLoading {
             return
         }
@@ -92,7 +81,7 @@ final class PagesLoader {
                     let doc: Document = try SwiftSoup.parse(s)
                     let nonogramList = try doc.select("table.nonogram_list").first()!
 
-                    var result: [Item] = []
+                    var result: [ListItem] = []
 
                     for tr in try nonogramList.select("tr") {
                         let nonogramImg = try tr.select("td.nonogram_img").first()
@@ -102,10 +91,10 @@ final class PagesLoader {
                             var iconUrlString = try nonogramImg.select("img").first()!.attr("src")
                             iconUrlString = iconUrlString.replacingOccurrences(of: "_0.png", with: "_1.png")
                             let name = try nonogramImg.select("img").first()!.attr("title")
-                            result.append(Item(
+                            result.append(ListItem(
                                 url: URL(string: urlString)!,
-                                iocnURL: URL(string: iconUrlString)!,
-                                name: name
+                                thumbnailUrl: URL(string: iconUrlString)!,
+                                title: name
                             ))
                         }
                     }
@@ -115,7 +104,7 @@ final class PagesLoader {
                     result.enumerated().forEach { index, item in
                         group.enter()
                         DispatchQueue.global().async {
-                            if let data = try? Data(contentsOf: item.iocnURL) {
+                            if let data = try? Data(contentsOf: item.thumbnailUrl) {
                                 if let image = UIImage(data: data) {
                                     result[index].image = image
                                 }
@@ -232,9 +221,8 @@ final class PagesViewController: UIViewController {
 
     weak var delegate: PagesViewControllerDelegate?
 
-    private var scrollView: UIScrollView!
-    private var stackView: UIStackView!
     private var filtersStackView: UIStackView!
+    private let listViewController = ListViewController()
 
     private let pagesLoader = PagesLoader()
     private let stateManager = StateManager()
@@ -250,8 +238,6 @@ final class PagesViewController: UIViewController {
     private var selectedFilter: PagesLoader.Filter {
         return pagesLoader.filters[state.currentFilter]
     }
-
-    private var items: [Item] = []
 
     private let pageButtonsView = PageButtonsView()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
@@ -275,17 +261,13 @@ final class PagesViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        scrollView = UIScrollView()
-        stackView = UIStackView()
         filtersStackView = UIStackView()
 
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(scrollView)
-        scrollView.addSubview(stackView)
+        listViewController.delegate = self
+        listViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        addChild(listViewController)
+        view.addSubview(listViewController.view)
+        listViewController.didMove(toParent: self)
 
         pageButtonsView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(pageButtonsView)
@@ -329,16 +311,10 @@ final class PagesViewController: UIViewController {
             filtersStackView.heightAnchor.constraint(equalToConstant: 56),
             filtersStackView.heightAnchor.constraint(equalTo: filtersScrollView.heightAnchor),
 
-            scrollView.topAnchor.constraint(equalTo: filtersScrollView.bottomAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: pageButtonsView.topAnchor),
-
-            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            listViewController.view.topAnchor.constraint(equalTo: filtersScrollView.bottomAnchor),
+            listViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            listViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            listViewController.view.bottomAnchor.constraint(equalTo: pageButtonsView.topAnchor),
 
             pageButtonsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             pageButtonsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -354,16 +330,6 @@ final class PagesViewController: UIViewController {
                                        name: UIApplication.willEnterForegroundNotification, object: nil)
         updateSelectedFilter()
         loadCurrentPage()
-    }
-
-    @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
-        let index = tapGR.view?.tag ?? 0
-        let item = items[index]
-        delegate?.pagesViewController(
-            self,
-            selectWithUrl: item.url,
-            thumbnail: item.iocnURL,
-            title: item.name)
     }
 
     @objc private func prevPage() {
@@ -387,27 +353,8 @@ final class PagesViewController: UIViewController {
         loadCurrentPage()
     }
 
-    private func show(items: [Item]) {
-        self.items = items
-
-        stackView.arrangedSubviews.forEach {
-            $0.removeFromSuperview()
-        }
-
-        items.enumerated().forEach { index, item in
-            let itemView = ItemView()
-            itemView.imageView.image = item.image
-            itemView.nameLabel.text = item.name
-            itemView.tag = index
-
-            stackView.addArrangedSubview(itemView)
-
-            let tapGR = UITapGestureRecognizer(target: self, action: #selector(tapItem(_:)))
-            itemView.addGestureRecognizer(tapGR)
-        }
-
-        scrollView.contentOffset = .zero
-
+    private func show(items: [ListItem]) {
+        listViewController.items = items
         pageButtonsView.prevPageButton.isEnabled = state.currentPage > 1
     }
 
@@ -442,35 +389,8 @@ final class PagesViewController: UIViewController {
     }
 }
 
-final class ItemView: UIView {
-    let imageView = UIImageView()
-    let nameLabel = UILabel()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        nameLabel.numberOfLines = 0
-        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        addSubview(imageView)
-        addSubview(nameLabel)
-
-        NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
-
-            nameLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            nameLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 16),
-            nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-        ])
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+extension PagesViewController: ListViewControllerDelegate {
+    func listViewController(_: ListViewController, didSelectItem item: ListItem) {
+        delegate?.pagesViewController(self, didSelectItem: item)
     }
 }

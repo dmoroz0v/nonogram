@@ -13,21 +13,17 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
     private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
-    func pagesViewController(
-        _: PagesViewController,
-        selectWithUrl url: URL,
-        thumbnail thumbnailUrl: URL,
-        title: String) {
-        if let data = storage.load(key: url.absoluteString) {
+    func pagesViewController( _: PagesViewController, didSelectItem item: ListItem) {
+        if let data = storage.load(key: item.url.absoluteString) {
             let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
             alert.addAction(.init(title: "Новая", style: .default, handler: { _ in
-                self.loadCrossword(url: url, thumbnail: thumbnailUrl, title: title)
+                self.loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
             }))
             alert.addAction(.init(title: "Продолжить", style: .default, handler: { _ in
                 let resolvingViewController = ResolvingViewController(
-                    url: url,
-                    thumbnail: thumbnailUrl,
-                    title: title,
+                    url: item.url,
+                    thumbnailUrl: item.thumbnailUrl,
+                    title: item.title,
                     field: data.field,
                     layers: data.layers,
                     selectedLayerColor: data.selectedLayerColor,
@@ -44,10 +40,10 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
             present(alert, animated: true)
             return
         }
-        loadCrossword(url: url, thumbnail: thumbnailUrl, title: title)
+        loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
     }
 
-    func loadCrossword(url: URL, thumbnail thumbnailUrl: URL, title: String) {
+    func loadCrossword(url: URL, thumbnailUrl: URL, title: String) {
         view.bringSubviewToFront(activityIndicator)
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
@@ -60,7 +56,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
 
                 let resolvingViewController = ResolvingViewController(
                     url: url,
-                    thumbnail: thumbnailUrl,
+                    thumbnailUrl: thumbnailUrl,
                     title: title,
                     horizontalDefs: horizontalDefs,
                     verticalDefs: verticalDefs,
@@ -91,14 +87,14 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
         solution: [[Int]],
         colors: [Field.Color],
         url: URL,
-        thumbnail thumbnailUrl: URL,
+        thumbnailUrl: URL,
         title: String,
         showsErrors: Bool
     ) {
         storage.save(
             key: url.absoluteString,
             url: url,
-            thumbnail: thumbnailUrl,
+            thumbnailUrl: thumbnailUrl,
             title: title,
             field: field,
             layers: layers,

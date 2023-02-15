@@ -22,7 +22,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
         solution: [[Int]],
         colors: [Field.Color],
         url: URL,
-        thumbnail thumbnailUrl: URL,
+        thumbnailUrl: URL,
         title: String,
         showsErrors: Bool
     )
@@ -73,7 +73,7 @@ class ResolvingViewController: UIViewController {
 
     init(
         url: URL,
-        thumbnail thumbnailUrl: URL,
+        thumbnailUrl: URL,
         title: String,
         horizontalDefs: [[Field.Definition]],
         verticalDefs: [[Field.Definition]],
@@ -98,7 +98,7 @@ class ResolvingViewController: UIViewController {
 
     init(
         url: URL,
-        thumbnail thumbnailUrl: URL,
+        thumbnailUrl: URL,
         title: String,
         field: Field,
         layers: [String: Field],
@@ -348,7 +348,7 @@ class ResolvingViewController: UIViewController {
             solution: solution,
             colors: colors,
             url: url,
-            thumbnail: thumbnailUrl,
+            thumbnailUrl: thumbnailUrl,
             title: crosswordTitle,
             showsErrors: showsErrors
         )
@@ -593,7 +593,7 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             solution: solution,
             colors: colors,
             url: url,
-            thumbnail: thumbnailUrl,
+            thumbnailUrl: thumbnailUrl,
             title: crosswordTitle,
             showsErrors: showsErrors
         )
