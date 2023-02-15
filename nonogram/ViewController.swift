@@ -7,14 +7,14 @@
 
 import UIKit
 
-class ViewController: UIViewController, ResolvingViewControllerDelegate, ListViewControllerDelegate {
+class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesViewControllerDelegate {
 
     private var currentViewController: UIViewController?
     private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
-    func listViewController(
-        _: ListViewController,
+    func pagesViewController(
+        _: PagesViewController,
         selectWithUrl url: URL,
         thumbnail thumbnailUrl: URL,
         title: String) {
@@ -45,14 +45,6 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
             return
         }
         loadCrossword(url: url, thumbnail: thumbnailUrl, title: title)
-    }
-
-    func listViewControllerLast(_: ListViewController) -> (url: URL, thumbnail: URL, title: String)? {
-        let data = storage.loadLast()
-        if let data = data {
-            return (url: data.url, thumbnail: data.thumbnail, title: data.title)
-        }
-        return nil
     }
 
     func loadCrossword(url: URL, thumbnail thumbnailUrl: URL, title: String) {
@@ -118,17 +110,17 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, ListVie
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
-        let listViewController = ListViewController()
-        listViewController.delegate = self
-        showVC(listViewController)
+        let pagesViewController = PagesViewController()
+        pagesViewController.delegate = self
+        showVC(pagesViewController)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let listViewController = ListViewController()
-        listViewController.delegate = self
-        showVC(listViewController)
+        let pagesViewController = PagesViewController()
+        pagesViewController.delegate = self
+        showVC(pagesViewController)
 
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.hidesWhenStopped = true

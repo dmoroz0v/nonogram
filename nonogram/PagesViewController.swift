@@ -1,5 +1,5 @@
 //
-//  ListViewController.swift
+//  PagesViewController.swift
 //  nonogram
 //
 //  Created by Denis S. Morozov on 16.01.2023.
@@ -10,14 +10,12 @@ import UIKit
 import SwiftSoup
 import SwiftUI
 
-protocol ListViewControllerDelegate: AnyObject {
-    func listViewController(
-        _: ListViewController,
+protocol PagesViewControllerDelegate: AnyObject {
+    func pagesViewController(
+        _: PagesViewController,
         selectWithUrl: URL,
         thumbnail: URL,
         title: String)
-
-    func listViewControllerLast(_: ListViewController) -> (url: URL, thumbnail: URL, title: String)?
 }
 
 struct Item {
@@ -63,12 +61,7 @@ final class PageButtonsView: UIView {
     }
 }
 
-protocol ListLoaderDelegate: AnyObject {
-    func listLoaderLast(_ :ListLoader) -> (url: URL, thumbnail: URL, title: String)?
-}
-
-final class ListLoader {
-    weak var delegate: ListLoaderDelegate?
+final class PagesLoader {
     struct Filter: Equatable {
         var name: String
         var url: URL
@@ -100,10 +93,6 @@ final class ListLoader {
                     let nonogramList = try doc.select("table.nonogram_list").first()!
 
                     var result: [Item] = []
-
-                    if page == 1, let last = self.delegate?.listLoaderLast(self) {
-                        result.insert(.init(url: last.url, iocnURL: last.thumbnail, name: last.title), at: 0)
-                    }
 
                     for tr in try nonogramList.select("tr") {
                         let nonogramImg = try tr.select("td.nonogram_img").first()
@@ -193,13 +182,13 @@ final class FilterView: UIView {
     }
 }
 
-final class ListViewController: UIViewController, ListLoaderDelegate {
+final class PagesViewController: UIViewController {
 
     private class StateManager {
         func saveState(_ state: State) {
             do {
                 let jsonString = String(decoding: try JSONEncoder().encode(state), as: UTF8.self)
-                UserDefaults.standard.set(jsonString, forKey: "NanoApp.List.State")
+                UserDefaults.standard.set(jsonString, forKey: "NanoApp.Pages.State")
                 UserDefaults.standard.synchronize()
             } catch {
             }
@@ -207,7 +196,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
         func loadState() -> State? {
             do {
-                let str = UserDefaults.standard.string(forKey: "NanoApp.List.State")
+                let str = UserDefaults.standard.string(forKey: "NanoApp.Pages.State")
                 if let str, let d = str.data(using: .utf8) {
                     return try JSONDecoder().decode(State.self, from: d)
                 }
@@ -216,7 +205,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
             return nil
         }
 
-        func isValid(state: State, with filters: [ListLoader.Filter]) -> Bool {
+        func isValid(state: State, with filters: [PagesLoader.Filter]) -> Bool {
             let stateFilersNames = state.filters.map { $0.name }
             let filtersNames = filters.map { $0.name }
             return stateFilersNames == filtersNames
@@ -241,13 +230,13 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         }
     }
 
-    weak var delegate: ListViewControllerDelegate?
+    weak var delegate: PagesViewControllerDelegate?
 
     private var scrollView: UIScrollView!
     private var stackView: UIStackView!
     private var filtersStackView: UIStackView!
 
-    private let listLoader = ListLoader()
+    private let pagesLoader = PagesLoader()
     private let stateManager = StateManager()
 
     private var state: State {
@@ -258,8 +247,8 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         }
     }
 
-    private var selectedFilter: ListLoader.Filter {
-        return listLoader.filters[state.currentFilter]
+    private var selectedFilter: PagesLoader.Filter {
+        return pagesLoader.filters[state.currentFilter]
     }
 
     private var items: [Item] = []
@@ -269,10 +258,10 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         let state = stateManager.loadState()
-        if let state, stateManager.isValid(state: state, with: listLoader.filters) {
+        if let state, stateManager.isValid(state: state, with: pagesLoader.filters) {
             self.state = state
         } else {
-            self.state = State(currentFilter: 0, filters: listLoader.filters.map({
+            self.state = State(currentFilter: 0, filters: pagesLoader.filters.map({
                 .init(name: $0.name, page: 1)
             }))
         }
@@ -289,8 +278,6 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         scrollView = UIScrollView()
         stackView = UIStackView()
         filtersStackView = UIStackView()
-
-        listLoader.delegate = self
 
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
@@ -321,7 +308,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         filtersStackView.spacing = 12
         filtersScrollView.addSubview(filtersStackView)
 
-        listLoader.filters.enumerated().forEach { index, filter in
+        pagesLoader.filters.enumerated().forEach { index, filter in
             let filterView = FilterView()
             filterView.label.text = filter.name
             filterView.tag = index
@@ -372,7 +359,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
     @objc private func tapItem(_ tapGR: UITapGestureRecognizer) {
         let index = tapGR.view?.tag ?? 0
         let item = items[index]
-        delegate?.listViewController(
+        delegate?.pagesViewController(
             self,
             selectWithUrl: item.url,
             thumbnail: item.iocnURL,
@@ -391,7 +378,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         guard let filterIndex = tapGR.view?.tag else {
             return
         }
-        if selectedFilter != listLoader.filters[filterIndex] {
+        if selectedFilter != pagesLoader.filters[filterIndex] {
             state.currentFilter = filterIndex
         }
     }
@@ -426,7 +413,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
 
     private func updateSelectedFilter() {
         for (filterIndex, filterView) in filtersStackView.arrangedSubviews.enumerated() {
-            (filterView as! FilterView).isSelected = selectedFilter == listLoader.filters[filterIndex]
+            (filterView as! FilterView).isSelected = selectedFilter == pagesLoader.filters[filterIndex]
         }
     }
 
@@ -434,7 +421,7 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
         view.alpha = 0.5
-        listLoader.loadPage(state.currentPage, filter: selectedFilter) { items in
+        pagesLoader.loadPage(state.currentPage, filter: selectedFilter) { items in
             self.view.isUserInteractionEnabled = true
             self.activityIndicator.stopAnimating()
             self.view.alpha = 1
@@ -452,10 +439,6 @@ final class ListViewController: UIViewController, ListLoaderDelegate {
             self.loadCurrentPage()
         }))
         present(alert, animated: true)
-    }
-
-    func listLoaderLast(_: ListLoader) -> (url: URL, thumbnail: URL, title: String)? {
-        return delegate?.listViewControllerLast(self)
     }
 }
 
