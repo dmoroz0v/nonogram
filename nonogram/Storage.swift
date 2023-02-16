@@ -75,12 +75,68 @@ final class Storage {
         save(data, key: key)
     }
 
-    func loadLast() -> Data? {
-        return _load(key: nil)
+    func hasRecently() -> Bool {
+        do {
+            let saves = SavesTableDefinition.table
+            let modifiedDate = SavesTableDefinition.modifiedDate
+
+            let recentlySaves = saves.order(modifiedDate.desc)
+
+            let db = try Connection(self.dbUrl.path)
+
+            return try db.scalar(recentlySaves.count) > 0
+        } catch {
+        }
+        return false
+    }
+
+    func recenty() -> [Data] {
+        guard hasRecently() else {
+            return []
+        }
+
+        do {
+            let saves = SavesTableDefinition.table
+            let json = SavesTableDefinition.json
+
+            let db = try Connection(self.dbUrl.path)
+
+            var result: [Data] = []
+
+            for item in try db.prepare(saves) {
+                let str = item[json]
+                if let d = str.data(using: .utf8) {
+                    result.append(try JSONDecoder().decode(Data.self, from: d))
+                }
+                if result.count == 25 {
+                    return result
+                }
+            }
+        } catch {
+        }
+
+        return []
     }
 
     func load(key: String) -> Data? {
-        return _load(key: key)
+        do {
+            let saves = SavesTableDefinition.table
+            let id = SavesTableDefinition.id
+            let json = SavesTableDefinition.json
+
+            let savedItem = saves.filter(id == key)
+
+            let db = try Connection(self.dbUrl.path)
+
+            for item in try db.prepare(savedItem) {
+                let str = item[json]
+                if let d = str.data(using: .utf8) {
+                    return try JSONDecoder().decode(Data.self, from: d)
+                }
+            }
+        } catch {
+        }
+        return nil
     }
 
     private func initDBIfNeeded() {
@@ -132,32 +188,5 @@ final class Storage {
                 }
             }
         }
-    }
-
-    private func _load(key: String?) -> Data? {
-        do {
-            let saves = SavesTableDefinition.table
-            let id = SavesTableDefinition.id
-            let json = SavesTableDefinition.json
-            let modifiedDate = SavesTableDefinition.modifiedDate
-
-            let savedItem: QueryType
-            if let key {
-                savedItem = saves.filter(id == key)
-            } else {
-                savedItem = saves.order(modifiedDate.desc)
-            }
-
-            let db = try Connection(self.dbUrl.path)
-
-            for item in try db.prepare(savedItem) {
-                let str = item[json]
-                if let d = str.data(using: .utf8) {
-                    return try JSONDecoder().decode(Data.self, from: d)
-                }
-            }
-        } catch {
-        }
-        return nil
     }
 }

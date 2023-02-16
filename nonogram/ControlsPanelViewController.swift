@@ -38,7 +38,7 @@ final class ControlsPanelViewController: UIViewController {
             let itemAspectSize: CGFloat = 50
 
             for pen in pens {
-                let v: UIView!
+                let v: UIView
                 switch pen {
                 case .empty:
                     v = ControlsPanelView.EmptyView(dotRadius: 3)

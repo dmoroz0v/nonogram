@@ -106,7 +106,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
-        let pagesViewController = PagesViewController()
+        let pagesViewController = PagesViewController(storage: storage)
         pagesViewController.delegate = self
         showVC(pagesViewController)
     }
@@ -114,7 +114,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let pagesViewController = PagesViewController()
+        let pagesViewController = PagesViewController(storage: storage)
         pagesViewController.delegate = self
         showVC(pagesViewController)
 

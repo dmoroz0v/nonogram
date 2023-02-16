@@ -56,7 +56,7 @@ final class ListViewController: UIViewController {
 
     weak var delegate: ListViewControllerDelegate?
 
-    private var scrollView: UIScrollView!
+    private(set) var scrollView: UIScrollView!
     private var stackView: UIStackView!
 
     var items: [ListItem] = [] {

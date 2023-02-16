@@ -35,8 +35,7 @@ class CrosswordLoader {
 
                 var d: [[Int]] = []
 
-                if var s = String(data: data, encoding: .utf8) {
-                    s = s.matching("d=\\[\\[.+?\\]\\]").first!
+                if var s = String(data: data, encoding: .utf8)?.matching("d=\\[\\[.+?\\]\\]").first {
                     s = s.replacingOccurrences(of: "d=[[", with: "")
                     s = s.replacingOccurrences(of: "]]", with: "")
                     let rows = s.components(separatedBy: "],[")
@@ -48,6 +47,9 @@ class CrosswordLoader {
                         }
                         d.append(arr)
                     }
+                } else {
+                    failure()
+                    return
                 }
 
                 var E: [[Int]] = []
