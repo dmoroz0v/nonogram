@@ -104,10 +104,10 @@ final class ControlsView: UIView {
         stackView.setCustomSpacing(16, after: thirdSeparator)
 
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             stackView.topAnchor.constraint(equalTo: topAnchor),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
 
             heightAnchor.constraint(equalToConstant: 48),
         ])
@@ -408,13 +408,13 @@ final class PagesViewController: UIViewController {
             listViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             controlsView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            controlsView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -32),
+            controlsView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -24),
 
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
 
-        listViewController.scrollView.contentInset = .init(top: 0, left: 0, bottom: 32 + 48 + 32, right: 0)
+        listViewController.scrollView.contentInset = .init(top: 0, left: 0, bottom: 24 + 48 + 24, right: 0)
 
         updateUI()
         loadCurrentPage()

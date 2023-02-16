@@ -32,6 +32,18 @@ final class Storage {
         let solution: [[Int]]
         let colors: [Field.Color]
         let showsErrors: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case url
+            case thumbnailUrl = "thumbnail"
+            case title
+            case field
+            case layers
+            case selectedLayerColor
+            case solution
+            case colors
+            case showsErrors
+        }
     }
 
     private lazy var dbUrl: URL = {
@@ -98,12 +110,15 @@ final class Storage {
         do {
             let saves = SavesTableDefinition.table
             let json = SavesTableDefinition.json
+            let modifiedDate = SavesTableDefinition.modifiedDate
 
             let db = try Connection(self.dbUrl.path)
 
             var result: [Data] = []
 
-            for item in try db.prepare(saves) {
+            let recentlySaves = saves.order(modifiedDate.desc)
+
+            for item in try db.prepare(recentlySaves) {
                 let str = item[json]
                 if let d = str.data(using: .utf8) {
                     result.append(try JSONDecoder().decode(Data.self, from: d))
