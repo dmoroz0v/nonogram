@@ -13,34 +13,26 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
     private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
-    func pagesViewController( _: PagesViewController, didSelectItem item: ListItem) {
-        if let data = storage.load(key: item.url.absoluteString) {
-            let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
-            alert.addAction(.init(title: "Новая", style: .default, handler: { _ in
-                self.loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
-            }))
-            alert.addAction(.init(title: "Продолжить", style: .default, handler: { _ in
-                let resolvingViewController = ResolvingViewController(
-                    url: item.url,
-                    thumbnailUrl: item.thumbnailUrl,
-                    title: item.title,
-                    field: data.field,
-                    layers: data.layers,
-                    selectedLayerColor: data.selectedLayerColor,
-                    solution: data.solution,
-                    colors: data.colors,
-                    showsErrors: data.showsErrors
-                )
+    func pagesViewController( _: PagesViewController, didSelectItem item: ListItem, savedData: Storage.Data?) {
+        if let data = savedData {
+            let resolvingViewController = ResolvingViewController(
+                url: item.url,
+                thumbnailUrl: item.thumbnailUrl,
+                title: item.title,
+                field: data.field,
+                layers: data.layers,
+                selectedLayerColor: data.selectedLayerColor,
+                solution: data.solution,
+                colors: data.colors,
+                showsErrors: data.showsErrors
+            )
 
-                resolvingViewController.delegate = self
+            resolvingViewController.delegate = self
 
-                self.showVC(resolvingViewController)
-            }))
-            alert.addAction(.init(title: "Отмена", style: .destructive))
-            present(alert, animated: true)
-            return
+            self.showVC(resolvingViewController)
+        } else {
+            loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
         }
-        loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
     }
 
     func loadCrossword(url: URL, thumbnailUrl: URL, title: String) {

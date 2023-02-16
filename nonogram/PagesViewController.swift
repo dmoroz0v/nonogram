@@ -11,7 +11,7 @@ import SwiftSoup
 import SwiftUI
 
 protocol PagesViewControllerDelegate: AnyObject {
-    func pagesViewController(_: PagesViewController, didSelectItem: ListItem)
+    func pagesViewController(_: PagesViewController, didSelectItem: ListItem, savedData: Storage.Data?)
 }
 
 private extension Elements {
@@ -363,6 +363,7 @@ final class PagesViewController: UIViewController {
         view.addSubview(controlsView)
         controlsView.prevPageButton.addTarget(self, action: #selector(prevPage), for: .touchDown)
         controlsView.nextPageButton.addTarget(self, action: #selector(nextPage), for: .touchDown)
+        controlsView.lastButton.addTarget(self, action: #selector(recently), for: .touchDown)
 
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.hidesWhenStopped = true
@@ -427,6 +428,12 @@ final class PagesViewController: UIViewController {
         state.currentPage += 1
     }
 
+    @objc private func recently() {
+        let recentlyViewController = RecentlyViewController(storage: storage)
+        recentlyViewController.delegate = self
+        present(recentlyViewController, animated: true)
+    }
+
     @objc private func selectFilter(_ tapGR: UITapGestureRecognizer) {
         guard let filterIndex = tapGR.view?.tag else {
             return
@@ -477,6 +484,25 @@ final class PagesViewController: UIViewController {
 
 extension PagesViewController: ListViewControllerDelegate {
     func listViewController(_: ListViewController, didSelectItem item: ListItem) {
-        delegate?.pagesViewController(self, didSelectItem: item)
+        if let data = storage.load(key: item.url.absoluteString) {
+            let alert = UIAlertController(title: nil, message: "", preferredStyle: .alert)
+            alert.addAction(.init(title: "Новая", style: .default, handler: { _ in
+                self.delegate?.pagesViewController(self, didSelectItem: item, savedData: nil)
+            }))
+            alert.addAction(.init(title: "Продолжить", style: .default, handler: { _ in
+                self.delegate?.pagesViewController(self, didSelectItem: item, savedData: data)
+            }))
+            alert.addAction(.init(title: "Отмена", style: .destructive))
+            present(alert, animated: true)
+        } else {
+            delegate?.pagesViewController(self, didSelectItem: item, savedData: nil)
+        }
+    }
+}
+
+extension PagesViewController: RecentlyViewControllerDelegate {
+    func recentlyViewController(_ recentlyViewController: RecentlyViewController, didSelectItem item: ListItem, savedData: Storage.Data?) {
+        recentlyViewController.dismiss(animated: true)
+        delegate?.pagesViewController(self, didSelectItem: item, savedData: savedData)
     }
 }

@@ -109,9 +109,11 @@ final class Storage {
                     result.append(try JSONDecoder().decode(Data.self, from: d))
                 }
                 if result.count == 25 {
-                    return result
+                    break
                 }
             }
+
+            return result
         } catch {
         }
 
@@ -120,6 +122,8 @@ final class Storage {
 
     func load(key: String) -> Data? {
         do {
+            initDBIfNeeded()
+
             let saves = SavesTableDefinition.table
             let id = SavesTableDefinition.id
             let json = SavesTableDefinition.json
@@ -160,6 +164,8 @@ final class Storage {
         state[key] = .saving
         DispatchQueue.global().async {
             do {
+                self.initDBIfNeeded()
+
                 let jsonString = String(decoding: try JSONEncoder().encode(data), as: UTF8.self)
 
                 let saves = SavesTableDefinition.table
