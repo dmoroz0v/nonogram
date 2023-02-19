@@ -12,8 +12,8 @@ final class FieldView: UIView {
     private let cellAspectSize: CGFloat = 15
     private let size: (columns: Int, rows: Int)
 
-    private(set) var horizontalDefsCell: NumbersView!
-    private(set) var verticalDefsCell: NumbersView!
+    private(set) var horizontalLinesHunksCell: LinesHunksView!
+    private(set) var verticalLinesHunksCell: LinesHunksView!
     private(set) var solutionView: SolutionView!
 
     init(frame: CGRect, field: Field) {
@@ -22,21 +22,21 @@ final class FieldView: UIView {
 
         solutionView = SolutionView(frame: .zero, panView: self)
 
-        horizontalDefsCell = NumbersView(frame: .zero, panView: self)
-        verticalDefsCell = NumbersView(frame: .zero, panView: self)
+        horizontalLinesHunksCell = LinesHunksView(frame: .zero, panView: self)
+        verticalLinesHunksCell = LinesHunksView(frame: .zero, panView: self)
 
-        let maxHorizintalDefs = field.horizintals.reduce(0) { value, defs in
-            if defs.count > value {
-                return defs.count
-            }
-            return value
-        }
-        let maxVerticalDefs = field.verticals.reduce(0) { value, defs in
-            if defs.count > value {
-                return defs.count
-            }
-            return value
-        }
+//        let maxHorizintalHunks = field.horizintalLinesHunks.reduce(0) { value, hunks in
+//            if hunks.count > value {
+//                return hunks.count
+//            }
+//            return value
+//        }
+//        let maxVerticalHunks = field.verticalLinesHunks.reduce(0) { value, hunks in
+//            if hunks.count > value {
+//                return hunks.count
+//            }
+//            return value
+//        }
 
         let leftTopCell = CellView()
         leftTopCell.translatesAutoresizingMaskIntoConstraints = false
@@ -47,45 +47,38 @@ final class FieldView: UIView {
         solutionView.cellAspectSize = cellAspectSize
         addSubview(solutionView)
 
-        horizontalDefsCell.translatesAutoresizingMaskIntoConstraints = false
-        horizontalDefsCell.cellAspectSize = cellAspectSize
-        horizontalDefsCell.defs = field.horizintals
-        horizontalDefsCell.offset = maxHorizintalDefs
-        horizontalDefsCell.axis = .horizontal
-        addSubview(horizontalDefsCell)
+        horizontalLinesHunksCell.translatesAutoresizingMaskIntoConstraints = false
+        horizontalLinesHunksCell.cellAspectSize = cellAspectSize
+        horizontalLinesHunksCell.linesHunks = field.horizintalLinesHunks
+        horizontalLinesHunksCell.axis = .horizontal
+        addSubview(horizontalLinesHunksCell)
 
-        verticalDefsCell.translatesAutoresizingMaskIntoConstraints = false
-        verticalDefsCell.cellAspectSize = cellAspectSize
-        verticalDefsCell.defs = field.verticals
-        verticalDefsCell.offset = maxVerticalDefs
-        verticalDefsCell.axis = .vertical
-        addSubview(verticalDefsCell)
+        verticalLinesHunksCell.translatesAutoresizingMaskIntoConstraints = false
+        verticalLinesHunksCell.cellAspectSize = cellAspectSize
+        verticalLinesHunksCell.linesHunks = field.verticalLinesHunks
+        verticalLinesHunksCell.axis = .vertical
+        addSubview(verticalLinesHunksCell)
 
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(
-                equalToConstant: CGFloat(maxHorizintalDefs + field.size.columns) * cellAspectSize),
-            heightAnchor.constraint(
-                equalToConstant: CGFloat(maxVerticalDefs + field.size.rows) * cellAspectSize),
-
             leftTopCell.topAnchor.constraint(equalTo: topAnchor),
             leftTopCell.leadingAnchor.constraint(equalTo: leadingAnchor),
-            leftTopCell.widthAnchor.constraint(equalToConstant: CGFloat(maxHorizintalDefs) * cellAspectSize),
-            leftTopCell.heightAnchor.constraint(equalToConstant: CGFloat(maxVerticalDefs) * cellAspectSize),
+            leftTopCell.widthAnchor.constraint(equalTo: horizontalLinesHunksCell.widthAnchor),
+            leftTopCell.heightAnchor.constraint(equalTo: verticalLinesHunksCell.heightAnchor),
 
-            horizontalDefsCell.topAnchor.constraint(equalTo: leftTopCell.bottomAnchor),
-            horizontalDefsCell.leadingAnchor.constraint(equalTo: leadingAnchor),
-            horizontalDefsCell.bottomAnchor.constraint(equalTo: bottomAnchor),
-            horizontalDefsCell.widthAnchor.constraint(equalToConstant: CGFloat(maxHorizintalDefs) * cellAspectSize),
+            horizontalLinesHunksCell.topAnchor.constraint(equalTo: leftTopCell.bottomAnchor),
+            horizontalLinesHunksCell.leadingAnchor.constraint(equalTo: leadingAnchor),
+            horizontalLinesHunksCell.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            verticalDefsCell.topAnchor.constraint(equalTo: topAnchor),
-            verticalDefsCell.leadingAnchor.constraint(equalTo: leftTopCell.trailingAnchor),
-            verticalDefsCell.trailingAnchor.constraint(equalTo: trailingAnchor),
-            verticalDefsCell.heightAnchor.constraint(equalToConstant: CGFloat(maxVerticalDefs) * cellAspectSize),
+            verticalLinesHunksCell.topAnchor.constraint(equalTo: topAnchor),
+            verticalLinesHunksCell.leadingAnchor.constraint(equalTo: leftTopCell.trailingAnchor),
+            verticalLinesHunksCell.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            solutionView.topAnchor.constraint(equalTo: verticalDefsCell.bottomAnchor),
-            solutionView.leadingAnchor.constraint(equalTo: horizontalDefsCell.trailingAnchor),
+            solutionView.topAnchor.constraint(equalTo: verticalLinesHunksCell.bottomAnchor),
+            solutionView.leadingAnchor.constraint(equalTo: horizontalLinesHunksCell.trailingAnchor),
             solutionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             solutionView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            solutionView.widthAnchor.constraint(equalToConstant: CGFloat(field.size.columns) * cellAspectSize),
+            solutionView.heightAnchor.constraint(equalToConstant: CGFloat(field.size.rows) * cellAspectSize),
         ])
     }
 

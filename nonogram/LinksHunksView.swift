@@ -1,5 +1,5 @@
 //
-//  NumbersView.swift
+//  LinesHunksView.swift
 //  nonogram
 //
 //  Created by Denis S. Morozov on 13.01.2023.
@@ -9,17 +9,17 @@ import Foundation
 import UIKit
 import UIKit.UIGestureRecognizerSubclass
 
-protocol NumbersViewDelegate: AnyObject {
-    func numbersView(_: NumbersView, defsForIndex: Int) -> [Field.Point]
+protocol LinesHunksViewDelegate: AnyObject {
+    func linesHunksView(_: LinesHunksView, lineForIndex: Int) -> [Field.Value?]
 }
 
-class NumbersView: CellView {
+final class LinesHunksView: CellView {
 
-    weak var delegate: NumbersViewDelegate?
+    weak var delegate: LinesHunksViewDelegate?
 
-    private class ContentView: UIView {
+    private final class ContentView: UIView {
 
-        unowned var numbersView: NumbersView!
+        unowned var linesHunksView: LinesHunksView!
 
         var pickColorHandler: ((_ color: Field.Color) -> Void)?
 
@@ -38,25 +38,25 @@ class NumbersView: CellView {
         override func draw(_ rect: CGRect) {
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
-            for (defsIndex, line) in numbersView.defs.enumerated() {
-                for (defIndex, def) in line.enumerated() {
-                    let space = numbersView.offset - numbersView.defs[defsIndex].count
-                    let cellAspectSize = numbersView.cellAspectSize
+            for (hunksIndex, lineHunks) in linesHunksView.linesHunks.enumerated() {
+                for (hunkIndex, hunk) in lineHunks.enumerated() {
+                    let space = linesHunksView.maxHunks - linesHunksView.linesHunks[hunksIndex].count
+                    let cellAspectSize = linesHunksView.cellAspectSize
                     var rectangle: CGRect
 
                     // >> Рисуем сплошную заливку клетки
-                    ctx.setFillColor(def.color.c.cgColor)
-                    if numbersView.axis == .horizontal {
+                    ctx.setFillColor(hunk.color.c.cgColor)
+                    if linesHunksView.axis == .horizontal {
                         rectangle = CGRect(
-                            x: cellAspectSize * CGFloat(space + defIndex),
-                            y: cellAspectSize * CGFloat(defsIndex),
+                            x: cellAspectSize * CGFloat(space + hunkIndex),
+                            y: cellAspectSize * CGFloat(hunksIndex),
                             width: cellAspectSize,
                             height: cellAspectSize
                         )
                     } else {
                         rectangle = CGRect(
-                            x: cellAspectSize * CGFloat(defsIndex),
-                            y: cellAspectSize * CGFloat(space + defIndex),
+                            x: cellAspectSize * CGFloat(hunksIndex),
+                            y: cellAspectSize * CGFloat(space + hunkIndex),
                             width: cellAspectSize,
                             height: cellAspectSize
                         )
@@ -64,10 +64,10 @@ class NumbersView: CellView {
                     ctx.fill(rectangle)
                     // <<
 
-                    let contrastColor = def.color.contrastColor
+                    let contrastColor = hunk.color.contrastColor
 
                     // >> Рисуем обводку
-                    if defsIndex == numbersView.focusedIndex {
+                    if hunksIndex == linesHunksView.focusedIndex {
                         var rectangle = rectangle
                         rectangle = rectangle.insetBy(dx: 1, dy: 1)
                         ctx.setLineWidth(1)
@@ -81,17 +81,17 @@ class NumbersView: CellView {
                     let paragraphStyle = NSMutableParagraphStyle()
                     paragraphStyle.alignment = .center
                     var font = UIFont.systemFont(ofSize: 0.58 * cellAspectSize)
-                    if let startSelectedDef = numbersView.startSelectedDef {
-                        let endSelectedDef = (numbersView.endSelectedDef ?? numbersView.startSelectedDef)!
-                        let minColumn = min(startSelectedDef.column, endSelectedDef.column) - space
-                        let maxColumn = max(startSelectedDef.column, endSelectedDef.column) - space
-                        if defsIndex == startSelectedDef.row && defIndex >= minColumn && defIndex <= maxColumn {
+                    if let startSelectedHunk = linesHunksView.startSelectedHunk {
+                        let endSelectedHunk = (linesHunksView.endSelectedHunk ?? linesHunksView.startSelectedHunk)!
+                        let minColumn = min(startSelectedHunk.column, endSelectedHunk.column) - space
+                        let maxColumn = max(startSelectedHunk.column, endSelectedHunk.column) - space
+                        if hunksIndex == startSelectedHunk.row && hunkIndex >= minColumn && hunkIndex <= maxColumn {
                             font = UIFont.systemFont(ofSize: 0.62 * cellAspectSize, weight: .heavy)
                             rectangle.origin.y -= 1
                         }
                     }
                     let string = NSAttributedString(
-                        string: "\(def.n)",
+                        string: "\(hunk.n)",
                         attributes: [
                             NSAttributedString.Key.paragraphStyle: paragraphStyle,
                             NSAttributedString.Key.font: font,
@@ -101,80 +101,80 @@ class NumbersView: CellView {
                     // <<
                 }
 
-                if let line = numbersView.delegate?.numbersView(numbersView, defsForIndex: defsIndex) {
+                if let line = linesHunksView.delegate?.linesHunksView(linesHunksView, lineForIndex: hunksIndex) {
                     // >> проходимся от начала линии до конца и пытаемся вычеркнуть цифры слева или сверху
-                    strikeDefs(ctx: ctx,
-                               line: line,
-                               range: Array(0..<line.count),
-                               defStartIndex: 0,
-                               increment: 1,
-                               defsIndex: defsIndex)
+                    strikeHunks(ctx: ctx,
+                                line: line,
+                                range: Array(0..<line.count),
+                                hunkStartIndex: 0,
+                                increment: 1,
+                                hunksIndex: hunksIndex)
                     // <<
 
                     // >> проходимся от конца линии до начала и пытаемся вычеркнуть цифры справа или снизу
-                    strikeDefs(ctx: ctx,
-                               line: line,
-                               range: (0..<line.count).reversed(),
-                               defStartIndex: numbersView.defs[defsIndex].count - 1,
-                               increment: -1,
-                               defsIndex: defsIndex)
+                    strikeHunks(ctx: ctx,
+                                line: line,
+                                range: (0..<line.count).reversed(),
+                                hunkStartIndex: linesHunksView.linesHunks[hunksIndex].count - 1,
+                                increment: -1,
+                                hunksIndex: hunksIndex)
                     // <<
                 }
             }
         }
 
-        private func strikeDefs(
+        private func strikeHunks(
             ctx: CGContext,
-            line: [Field.Point],
+            line: [Field.Value?],
             range: [Int],
-            defStartIndex: Int,
+            hunkStartIndex: Int,
             increment: Int,
-            defsIndex: Int
+            hunksIndex: Int
         ) {
-            var defIndex = defStartIndex
+            var hunkIndex = hunkStartIndex
             var n = 0
-            for pointIndex in range {
-                let point = line[pointIndex]
-                if point == .undefined {
+            for valueIndex in range {
+                let value = line[valueIndex]
+                if value == nil {
                     break
                 }
-                if point != .empty {
+                if value != .empty {
                     n += 1
                 }
                 if n != 0
-                    && (pointIndex + 1 == line.count || pointIndex == 0 || line[pointIndex + increment] != point)
-                    && defIndex >= 0 && defIndex < numbersView.defs[defsIndex].count
+                    && (valueIndex + 1 == line.count || valueIndex == 0 || line[valueIndex + increment] != value)
+                    && hunkIndex >= 0 && hunkIndex < linesHunksView.linesHunks[hunksIndex].count
                 {
-                    let defs = numbersView.defs[defsIndex]
-                    let def = defs[defIndex]
-                    if n == def.n {
-                        let cellAspectSize = numbersView.cellAspectSize
+                    let lineHunks = linesHunksView.linesHunks[hunksIndex]
+                    let hunk = lineHunks[hunkIndex]
+                    if n == hunk.n {
+                        let cellAspectSize = linesHunksView.cellAspectSize
 
                         var rectangle: CGRect
-                        if numbersView.axis == .horizontal {
+                        if linesHunksView.axis == .horizontal {
                             rectangle = CGRect(
-                                x: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
-                                y: cellAspectSize * CGFloat(defsIndex),
+                                x: cellAspectSize * CGFloat(linesHunksView.maxHunks - lineHunks.count + hunkIndex),
+                                y: cellAspectSize * CGFloat(hunksIndex),
                                 width: cellAspectSize,
                                 height: cellAspectSize
                             )
                         } else {
                             rectangle = CGRect(
-                                x: cellAspectSize * CGFloat(defsIndex),
-                                y: cellAspectSize * CGFloat(numbersView.offset - defs.count + defIndex),
+                                x: cellAspectSize * CGFloat(hunksIndex),
+                                y: cellAspectSize * CGFloat(linesHunksView.maxHunks - lineHunks.count + hunkIndex),
                                 width: cellAspectSize,
                                 height: cellAspectSize
                             )
                         }
                         rectangle = rectangle.insetBy(dx: 2, dy: 2)
-                        ctx.setStrokeColor(def.color.contrastColor.cgColor)
+                        ctx.setStrokeColor(hunk.color.contrastColor.cgColor)
                         ctx.setLineWidth(1)
                         ctx.move(to: CGPoint(x: rectangle.minX, y: rectangle.minY))
                         ctx.addLine(to: CGPoint(x: rectangle.maxX, y: rectangle.maxY))
                         ctx.strokePath()
 
                         n = 0
-                        defIndex += increment
+                        hunkIndex += increment
                     }
                 }
             }
@@ -182,21 +182,21 @@ class NumbersView: CellView {
 
         @objc private func tap(_ tapGR: UITapGestureRecognizer) {
             let location = tapGR.location(in: self)
-            let cellAspectSize = numbersView.cellAspectSize
-            let defs = numbersView.defs
-            let offset = numbersView.offset
-            let defsIndex: Int
-            let defIndex: Int
-            if numbersView.axis == .horizontal {
-                defsIndex = Int(location.y / cellAspectSize)
-                defIndex = Int(location.x / cellAspectSize) - (offset - defs[defsIndex].count)
+            let cellAspectSize = linesHunksView.cellAspectSize
+            let linesHunks = linesHunksView.linesHunks
+            let maxColumns = linesHunksView.maxHunks
+            let lineHunksIndex: Int
+            let hunkIndex: Int
+            if linesHunksView.axis == .horizontal {
+                lineHunksIndex = Int(location.y / cellAspectSize)
+                hunkIndex = Int(location.x / cellAspectSize) - (maxColumns - linesHunks[lineHunksIndex].count)
             } else {
-                defsIndex = Int(location.x / cellAspectSize)
-                defIndex = Int(location.y / cellAspectSize) - (offset - defs[defsIndex].count)
+                lineHunksIndex = Int(location.x / cellAspectSize)
+                hunkIndex = Int(location.y / cellAspectSize) - (maxColumns - linesHunks[lineHunksIndex].count)
             }
-            if defIndex >= 0 {
-                let pickedColor = defs[defsIndex][defIndex].color
-                numbersView.showPickColorAnimation(with: pickedColor, defsIndex: defsIndex, defIndex: defIndex)
+            if hunkIndex >= 0 {
+                let pickedColor = linesHunks[lineHunksIndex][hunkIndex].color
+                linesHunksView.showPickColorAnimation(with: pickedColor, lineHunksIndex: lineHunksIndex, hunkIndex: hunkIndex)
                 pickColorHandler?(pickedColor)
             }
         }
@@ -220,12 +220,6 @@ class NumbersView: CellView {
         }
     }
 
-    var offset: Int = 0 {
-        didSet {
-            cv.setNeedsDisplay()
-        }
-    }
-
     var pickColorHandler: ((_ color: Field.Color) -> Void)? {
         set {
             cv.pickColorHandler = newValue
@@ -235,11 +229,32 @@ class NumbersView: CellView {
         }
     }
 
-    var defs: [[Field.Definition]] = [] {
+    var linesHunks: [[Field.LineHunk]] = [] {
         didSet {
+            maxHunks = linesHunks.reduce(0, { partialResult, lineHunks in
+                if lineHunks.count > partialResult {
+                    return lineHunks.count
+                } else {
+                    return partialResult
+                }
+            })
+            invalidateIntrinsicContentSize()
             cv.setNeedsDisplay()
         }
     }
+
+    override var intrinsicContentSize: CGSize {
+        switch axis {
+        case .horizontal:
+            return CGSize(width: CGFloat(maxHunks) * cellAspectSize, height: CGFloat(linesHunks.count) * cellAspectSize)
+        case .vertical:
+            return CGSize(width: CGFloat(linesHunks.count) * cellAspectSize, height: CGFloat(maxHunks) * cellAspectSize)
+        @unknown default:
+            fatalError()
+        }
+    }
+
+    private var maxHunks: Int = 0
 
     private let cv = ContentView()
 
@@ -248,7 +263,7 @@ class NumbersView: CellView {
         cv.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(cv)
 
-        cv.numbersView = self
+        cv.linesHunksView = self
 
         NSLayoutConstraint.activate([
             contentView.topAnchor.constraint(equalTo: cv.topAnchor),
@@ -271,8 +286,8 @@ class NumbersView: CellView {
         cv.setNeedsDisplay()
     }
 
-    private var startSelectedDef: (row: Int, column: Int)?
-    private var endSelectedDef: (row: Int, column: Int)?
+    private var startSelectedHunk: (row: Int, column: Int)?
+    private var endSelectedHunk: (row: Int, column: Int)?
 
     @objc private func longPressPan(_ gr: LongPressPanGR) {
         switch gr.state {
@@ -280,53 +295,53 @@ class NumbersView: CellView {
             break
         case .began:
             let location = gr.location(in: self)
-            let startSelectedDef: (row: Int, column: Int)
+            let startSelectedHunk: (row: Int, column: Int)
             switch axis {
             case .horizontal:
-                startSelectedDef = (
+                startSelectedHunk = (
                     row: Int(location.y / cellAspectSize),
                     column: Int(location.x / cellAspectSize)
                 )
             case .vertical:
-                startSelectedDef = (
+                startSelectedHunk = (
                     row: Int(location.x / cellAspectSize),
                     column: Int(location.y / cellAspectSize)
                 )
             @unknown default:
                 fatalError()
             }
-            let space = offset - defs[startSelectedDef.row].count
-            if startSelectedDef.column >= space {
-                self.startSelectedDef = startSelectedDef
+            let space = maxHunks - linesHunks[startSelectedHunk.row].count
+            if startSelectedHunk.column >= space {
+                self.startSelectedHunk = startSelectedHunk
             }
         case .changed:
-            guard let startSelectedDef = startSelectedDef else {
+            guard let startSelectedHunk = startSelectedHunk else {
                 return
             }
             let location = gr.location(in: self)
-            let endSelectedDef: (row: Int, column: Int)
+            let endSelectedHunk: (row: Int, column: Int)
             switch axis {
             case .horizontal:
-                endSelectedDef = (
-                    row: startSelectedDef.row,
+                endSelectedHunk = (
+                    row: startSelectedHunk.row,
                     column: Int(location.x / cellAspectSize)
                 )
             case .vertical:
-                endSelectedDef = (
-                    row: startSelectedDef.row,
+                endSelectedHunk = (
+                    row: startSelectedHunk.row,
                     column: Int(location.y / cellAspectSize)
                 )
             @unknown default:
                 fatalError()
             }
-            let adustColumnIndex = offset - defs[endSelectedDef.row].count
-            if endSelectedDef.column >= adustColumnIndex &&
-                endSelectedDef.column < offset {
-                self.endSelectedDef = endSelectedDef
+            let adustColumnIndex = maxHunks - linesHunks[endSelectedHunk.row].count
+            if endSelectedHunk.column >= adustColumnIndex &&
+                endSelectedHunk.column < maxHunks {
+                self.endSelectedHunk = endSelectedHunk
             }
         case .ended, .cancelled:
-            startSelectedDef = nil
-            endSelectedDef = nil
+            startSelectedHunk = nil
+            endSelectedHunk = nil
         case .failed:
             break
         @unknown default:
@@ -356,27 +371,27 @@ class NumbersView: CellView {
     }()
 
     func drawSum() {
-        guard let startSelectedDef = startSelectedDef else {
+        guard let startSelectedHunk = startSelectedHunk else {
             infoView.removeFromSuperview()
             sumLabel.removeFromSuperview()
             setNeedsDisplay()
             return
         }
-        let endSelectedDef = endSelectedDef ?? startSelectedDef
+        let endSelectedHunk = endSelectedHunk ?? startSelectedHunk
 
         var n = 0
-        let space = (offset - defs[startSelectedDef.row].count)
-        let minColumn = min(startSelectedDef.column, endSelectedDef.column)
-        let maxColumn = max(startSelectedDef.column, endSelectedDef.column)
+        let space = (maxHunks - linesHunks[startSelectedHunk.row].count)
+        let minColumn = min(startSelectedHunk.column, endSelectedHunk.column)
+        let maxColumn = max(startSelectedHunk.column, endSelectedHunk.column)
 
-        var prevDef: Field.Definition?
+        var prevHunk: Field.LineHunk?
         for columnIndex in minColumn...maxColumn {
-            let def = defs[startSelectedDef.row][columnIndex - space]
-            n += def.n
-            if def.color.id == prevDef?.color.id {
+            let hunk = linesHunks[startSelectedHunk.row][columnIndex - space]
+            n += hunk.n
+            if hunk.color.id == prevHunk?.color.id {
                 n += 1
             }
-            prevDef = def
+            prevHunk = hunk
         }
 
         if infoView.superview == nil {
@@ -392,11 +407,11 @@ class NumbersView: CellView {
         case .horizontal:
             infoView.center = CGPoint(
                 x: cellAspectSize * CGFloat(maxColumn + minColumn + 1) / 2,
-                y: CGFloat(startSelectedDef.row) * cellAspectSize - infoView.frame.height / 2
+                y: CGFloat(startSelectedHunk.row) * cellAspectSize - infoView.frame.height / 2
             )
         case .vertical:
             infoView.center = CGPoint(
-                x: CGFloat(startSelectedDef.row) * cellAspectSize - infoView.frame.width / 2,
+                x: CGFloat(startSelectedHunk.row) * cellAspectSize - infoView.frame.width / 2,
                 y: cellAspectSize * CGFloat(maxColumn + minColumn + 1) / 2
             )
         @unknown default:
@@ -408,21 +423,21 @@ class NumbersView: CellView {
 
     private var showPickColorAnimationContext: NSObject?
 
-    private func showPickColorAnimation(with color: Field.Color, defsIndex: Int, defIndex: Int) {
+    private func showPickColorAnimation(with color: Field.Color, lineHunksIndex: Int, hunkIndex: Int) {
         addSubview(infoView)
         infoView.alpha = 1
         infoView.backgroundColor = color.c
-        let space = offset - defs[defsIndex].count
+        let space = maxHunks - linesHunks[lineHunksIndex].count
         switch axis {
         case .horizontal:
             infoView.center = CGPoint(
-                x: cellAspectSize * CGFloat(defIndex + space) + cellAspectSize / 2,
-                y: CGFloat(defsIndex) * cellAspectSize - infoView.frame.height / 2
+                x: cellAspectSize * CGFloat(hunkIndex + space) + cellAspectSize / 2,
+                y: CGFloat(lineHunksIndex) * cellAspectSize - infoView.frame.height / 2
             )
         case .vertical:
             infoView.center = CGPoint(
-                x: CGFloat(defsIndex) * cellAspectSize - infoView.frame.width / 2,
-                y: cellAspectSize * CGFloat(defIndex + space) + cellAspectSize / 2
+                x: CGFloat(lineHunksIndex) * cellAspectSize - infoView.frame.width / 2,
+                y: cellAspectSize * CGFloat(hunkIndex + space) + cellAspectSize / 2
             )
         @unknown default:
             break
@@ -443,7 +458,7 @@ class NumbersView: CellView {
     }
 }
 
-extension NumbersView: LongPressPanGRDelegate {
+extension LinesHunksView: LongPressPanGRDelegate {
     fileprivate func longPressPanGRIsPossibeRecognize(_ gr: LongPressPanGR) -> Bool {
         let point = gr.location(in: self)
         return bounds.contains(point)

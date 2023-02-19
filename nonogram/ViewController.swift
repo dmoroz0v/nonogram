@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesViewControllerDelegate {
+final class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesViewControllerDelegate {
 
     private var currentViewController: UIViewController?
     private let crosswordLoader = CrosswordLoader()
@@ -40,7 +40,7 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
         view.alpha = 0.5
-        crosswordLoader.load(url: url) { horizontalDefs, verticalDefs, solution, colors in
+        crosswordLoader.load(url: url) { horizontalLinesHunks, verticalLinesHunks, solution, colors in
             DispatchQueue.main.async {
                 self.activityIndicator.stopAnimating()
                 self.view.isUserInteractionEnabled = true
@@ -50,8 +50,8 @@ class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesVi
                     url: url,
                     thumbnailUrl: thumbnailUrl,
                     title: title,
-                    horizontalDefs: horizontalDefs,
-                    verticalDefs: verticalDefs,
+                    horizontalLinesHunks: horizontalLinesHunks,
+                    verticalLinesHunks: verticalLinesHunks,
                     solution: solution,
                     colors: colors
                 )

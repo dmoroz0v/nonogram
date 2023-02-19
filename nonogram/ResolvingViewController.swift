@@ -30,7 +30,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
     func resolvingViewControllerDidTapExit(_: ResolvingViewController)
 }
 
-class ResolvingViewController: UIViewController {
+final class ResolvingViewController: UIViewController {
 
     enum UpdateAction {
         case selectLayer(penColor: Field.Color)
@@ -75,8 +75,8 @@ class ResolvingViewController: UIViewController {
         url: URL,
         thumbnailUrl: URL,
         title: String,
-        horizontalDefs: [[Field.Definition]],
-        verticalDefs: [[Field.Definition]],
+        horizontalLinesHunks: [[Field.LineHunk]],
+        verticalLinesHunks: [[Field.LineHunk]],
         solution: [[Int]],
         colors: [Field.Color]
     ) {
@@ -84,12 +84,13 @@ class ResolvingViewController: UIViewController {
         self.thumbnailUrl = thumbnailUrl
         self.crosswordTitle = title
         field = Field(
-            points: Array<[Field.Point]>(
-                repeating: Array<Field.Point>(repeating: .undefined, count: verticalDefs.count),
-                count: horizontalDefs.count
+            values: Array<[Field.Value?]>(
+                repeating: Array<Field.Value?>(repeating: nil, count: verticalLinesHunks.count),
+                count: horizontalLinesHunks.count
             ),
-            horizintals: horizontalDefs,
-            verticals: verticalDefs
+            horizintalLinesHunks: horizontalLinesHunks,
+            verticalLinesHunks: verticalLinesHunks,
+            colors: colors
         )
         self.solution = solution
         self.colors = colors
@@ -143,13 +144,13 @@ class ResolvingViewController: UIViewController {
         fieldView = FieldView(frame: .zero, field: field)
         fieldView.translatesAutoresizingMaskIntoConstraints = false
 
-        fieldView.horizontalDefsCell.delegate = self
-        fieldView.horizontalDefsCell.pickColorHandler = { [weak self] color in
+        fieldView.horizontalLinesHunksCell.delegate = self
+        fieldView.horizontalLinesHunksCell.pickColorHandler = { [weak self] color in
             self?.pen = .color(color)
         }
 
-        fieldView.verticalDefsCell.delegate = self
-        fieldView.verticalDefsCell.pickColorHandler = { [weak self] color in
+        fieldView.verticalLinesHunksCell.delegate = self
+        fieldView.verticalLinesHunksCell.pickColorHandler = { [weak self] color in
             self?.pen = .color(color)
         }
 
@@ -223,22 +224,22 @@ class ResolvingViewController: UIViewController {
         var rowIsResolved = true
         for columnIndex in 0..<field.size.columns {
             let validValue = validValue(row: row, column: columnIndex)
-            let point = field.points[row][columnIndex]
+            let value = field.values[row][columnIndex]
             switch validValue {
             case .empty:
-                if point != .undefined && point != .empty {
+                if value != nil && value != .empty {
                     rowIsResolved = false
                 }
             case .color:
-                if point.value != validValue {
+                if value != validValue {
                     rowIsResolved = false
                 }
             }
         }
         if rowIsResolved {
             for columnIndex in 0..<field.size.columns {
-                if field.points[row][columnIndex] == .undefined {
-                    field.points[row][columnIndex] = .empty
+                if field.values[row][columnIndex] == nil {
+                    field.values[row][columnIndex] = .empty
                 }
             }
         }
@@ -249,22 +250,22 @@ class ResolvingViewController: UIViewController {
         var columnIsResolved = true
         for rowIndex in 0..<field.size.rows {
             let validValue = validValue(row: rowIndex, column: column)
-            let point = field.points[rowIndex][column]
+            let value = field.values[rowIndex][column]
             switch validValue {
             case .empty:
-                if point != .undefined && point != .empty {
+                if value != nil && value != .empty {
                     columnIsResolved = false
                 }
             case .color:
-                if point.value != validValue {
+                if value != validValue {
                     columnIsResolved = false
                 }
             }
         }
         if columnIsResolved {
             for rowIndex in 0..<field.size.rows {
-                if field.points[rowIndex][column] == .undefined {
-                    field.points[rowIndex][column] = .empty
+                if field.values[rowIndex][column] == nil {
+                    field.values[rowIndex][column] = .empty
                 }
             }
         }
@@ -278,45 +279,46 @@ class ResolvingViewController: UIViewController {
             sourceField = field
             if layers[penColor.id] == nil {
                 layers[penColor.id] = Field(
-                    points: field.points.map({ row in
+                    values: field.values.map({ row in
                         var row = row
-                        for (rowIndex, point) in row.enumerated() {
-                            if case .color(let c) = point.value, c.id != penColor.id {
+                        for (rowIndex, value) in row.enumerated() {
+                            if case .color(let c) = value, c.id != penColor.id {
                                 row[rowIndex] = .empty
                             }
                         }
                         return row
                     }),
-                    horizintals: sourceField.horizintals.map({ defs in
-                        return defs.filter { def in
-                            def.color.id == penColor.id
+                    horizintalLinesHunks: sourceField.horizintalLinesHunks.map({ lineHunks in
+                        return lineHunks.filter { hunk in
+                            hunk.color.id == penColor.id
                         }
                     }),
-                    verticals: sourceField.verticals.map({ defs in
-                        return defs.filter { def in
-                            def.color.id == penColor.id
+                    verticalLinesHunks: sourceField.verticalLinesHunks.map({ lineHunks in
+                        return lineHunks.filter { hunk in
+                            hunk.color.id == penColor.id
                         }
-                    })
+                    }),
+                    colors: field.colors
                 )
             }
 
             field = layers[penColor.id]
 
-            for (rowIndex, row) in sourceField.points.enumerated() {
-                for (columnIndex, point) in row.enumerated() {
-                    if field.horizintals[rowIndex].isEmpty || field.verticals[columnIndex].isEmpty {
-                        field.points[rowIndex][columnIndex] = .empty
+            for (rowIndex, row) in sourceField.values.enumerated() {
+                for (columnIndex, value) in row.enumerated() {
+                    if field.horizintalLinesHunks[rowIndex].isEmpty || field.verticalLinesHunks[columnIndex].isEmpty {
+                        field.values[rowIndex][columnIndex] = .empty
                         continue
                     }
-                    if case .color(let c) = point.value {
+                    if case .color(let c) = value {
                         if c.id == penColor.id {
-                            field.points[rowIndex][columnIndex] = point
+                            field.values[rowIndex][columnIndex] = value
                         } else {
-                            field.points[rowIndex][columnIndex] = .empty
+                            field.values[rowIndex][columnIndex] = .empty
                         }
                     }
-                    if point == .empty {
-                        field.points[rowIndex][columnIndex] = point
+                    if value == .empty {
+                        field.values[rowIndex][columnIndex] = value
                     }
                 }
             }
@@ -327,10 +329,10 @@ class ResolvingViewController: UIViewController {
             field = sourceField
             sourceField = nil
 
-            for (rowIndex, row) in layers[selectedLayerColor!.id]!.points.enumerated() {
-                for (columnIndex, point) in row.enumerated() {
-                    if case .color(let c) = point.value, c == selectedLayerColor {
-                        field.points[rowIndex][columnIndex] = point
+            for (rowIndex, row) in layers[selectedLayerColor!.id]!.values.enumerated() {
+                for (columnIndex, value) in row.enumerated() {
+                    if case .color(let c) = value, c == selectedLayerColor {
+                        field.values[rowIndex][columnIndex] = value
                     }
                 }
             }
@@ -371,10 +373,10 @@ class ResolvingViewController: UIViewController {
         }
 
         fieldView.solutionView.setNeedsDisplay()
-        fieldView.horizontalDefsCell.defs = field.horizintals
-        fieldView.horizontalDefsCell.setNeedsDisplay()
-        fieldView.verticalDefsCell.defs = field.verticals
-        fieldView.verticalDefsCell.setNeedsDisplay()
+        fieldView.horizontalLinesHunksCell.linesHunks = field.horizintalLinesHunks
+        fieldView.horizontalLinesHunksCell.setNeedsDisplay()
+        fieldView.verticalLinesHunksCell.linesHunks = field.verticalLinesHunks
+        fieldView.verticalLinesHunksCell.setNeedsDisplay()
     }
 
     private func checkForError() -> Bool {
@@ -382,14 +384,12 @@ class ResolvingViewController: UIViewController {
         let minErrorsCount = 5
         for rowIndex in 0..<field.size.rows {
             for columntIndex in 0..<field.size.columns {
-                let validValue: Field.Point.Value = validValue(row: rowIndex, column: columntIndex)
-                let point = field.points[rowIndex][columntIndex]
-                if point != .undefined {
-                    if validValue != point.value {
-                        errorsCount += 1
-                        if errorsCount == minErrorsCount {
-                            break
-                        }
+                let validValue: Field.Value = validValue(row: rowIndex, column: columntIndex)
+                let value = field.values[rowIndex][columntIndex]
+                if value != nil && validValue != value {
+                    errorsCount += 1
+                    if errorsCount == minErrorsCount {
+                        break
                     }
                 }
             }
@@ -408,12 +408,12 @@ class ResolvingViewController: UIViewController {
         return errorsCount > 0
     }
 
-    private func validValue(row: Int, column: Int) -> Field.Point.Value {
-        let s = solution[row][column]
-        if s == 0 {
+    private func validValue(row: Int, column: Int) -> Field.Value {
+        let value = solution[row][column]
+        if value == 0 {
             return .empty
         } else {
-            let color = colors[s - 1]
+            let color = colors[value - 1]
             if let selectedLayerColor {
                 if selectedLayerColor.id == color.id {
                     return .color(color)
@@ -507,16 +507,16 @@ extension ResolvingViewController: UIPencilInteractionDelegate {
     }
 }
 
-extension ResolvingViewController: NumbersViewDelegate {
-    func numbersView(_ numbersView: NumbersView, defsForIndex index: Int) -> [Field.Point] {
-        if numbersView.axis == .horizontal {
+extension ResolvingViewController: LinesHunksViewDelegate {
+    func linesHunksView(_ linesHunksView: LinesHunksView, lineForIndex index: Int) -> [Field.Value?] {
+        if linesHunksView.axis == .horizontal {
             let row = index
-            return field.points[row]
+            return field.values[row]
         } else {
             let column = index
-            var result: [Field.Point] = []
+            var result: [Field.Value?] = []
             for rowIndex in 0..<field.size.rows {
-                result.append(field.points[rowIndex][column])
+                result.append(field.values[rowIndex][column])
             }
             return result
         }
@@ -542,11 +542,11 @@ extension ResolvingViewController: ControlsPanelViewControllerDelegate {
 }
 
 extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource {
-    func solutionView(_ solutionView: SolutionView, pointForColumn column: Int, row: Int) -> Field.Point {
-        return field.points[row][column]
+    func solutionView(_ solutionView: SolutionView, valueForColumn column: Int, row: Int) -> Field.Value? {
+        return field.values[row][column]
     }
 
-    func solutionView(_: SolutionView, validValueForColumn column: Int, row: Int) -> Field.Point.Value {
+    func solutionView(_: SolutionView, validValueForColumn column: Int, row: Int) -> Field.Value {
         return validValue(row: row, column: column)
     }
 
@@ -555,28 +555,28 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
     }
 
     func solutionView(_ solutionView: SolutionView, didLongTapColumn column: Int, row: Int) {
-        fieldView.horizontalDefsCell.focusedIndex = row
-        fieldView.verticalDefsCell.focusedIndex = column
+        fieldView.horizontalLinesHunksCell.focusedIndex = row
+        fieldView.verticalLinesHunksCell.focusedIndex = column
         solutionView.focusedCell = (row: row, column: column)
     }
 
     func solutionView(_ solutionView: SolutionView, didTouchColumn column: Int, row: Int) -> Bool {
-        var newValue: Field.Point
+        var newValue: Field.Value
         switch pen {
         case .empty:
             newValue = .empty
         case .color(let c):
-            newValue = .init(value: .color(c))
+            newValue = .color(c)
         }
 
-        if field.points[row][column] != newValue {
-            field.points[row][column] = newValue
+        if field.values[row][column] != newValue {
+            field.values[row][column] = newValue
         } else {
-            field.points[row][column] = .undefined
+            field.values[row][column] = nil
         }
 
-        fieldView.horizontalDefsCell.focusedIndex = row
-        fieldView.verticalDefsCell.focusedIndex = column
+        fieldView.horizontalLinesHunksCell.focusedIndex = row
+        fieldView.verticalLinesHunksCell.focusedIndex = column
         solutionView.focusedCell = (row: row, column: column)
 
         if let selectedLayerColor {

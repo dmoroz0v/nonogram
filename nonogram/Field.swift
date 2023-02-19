@@ -63,53 +63,31 @@ struct Field: Codable {
         }
     }
 
-    struct Point: Codable, Equatable {
-        enum Value: Codable, Equatable {
-            case color(Color)
-            case empty
-
-            var contrastColor: UIColor {
-                switch self {
-                case .color(let c):
-                    return c.contrastColor
-                case .empty:
-                    return UIColor.gray
-                }
-            }
-        }
-        var value: Value?
-
-        static let undefined = Point(value: nil)
-        static let empty = Point(value: .empty)
+    enum Value: Codable, Equatable {
+        case color(Color)
+        case empty
 
         var contrastColor: UIColor {
-            switch value {
+            switch self {
             case .color(let c):
                 return c.contrastColor
-            case .empty, .none:
+            case .empty:
                 return UIColor.gray
             }
         }
     }
 
-    struct Definition: Codable {
+    struct LineHunk: Codable {
         var color: Color
         var n: Int
     }
 
-    var points: [[Point]]
+    var values: [[Value?]]
 
-    var horizintals: [[Definition]]
-    var verticals: [[Definition]]
+    var horizintalLinesHunks: [[LineHunk]]
+    var verticalLinesHunks: [[LineHunk]]
+    var colors: [Color]
     var size: (columns: Int, rows: Int) {
-        return (columns: points[0].count, rows: points.count)
-    }
-
-    var colors: [Color] {
-        var result: [String: Color] = [:]
-        for def in (horizintals.flatMap({ $0 }) + verticals.flatMap({ $0 })) {
-            result[def.color.id] = def.color
-        }
-        return Array(result.values)
+        return (columns: values[0].count, rows: values.count)
     }
 }

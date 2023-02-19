@@ -15,12 +15,12 @@ protocol SolutionViewDelegate: AnyObject {
 }
 
 protocol SolutionViewDataSource: AnyObject {
-    func solutionView(_: SolutionView, pointForColumn: Int, row: Int) -> Field.Point
-    func solutionView(_: SolutionView, validValueForColumn: Int, row: Int) -> Field.Point.Value
+    func solutionView(_: SolutionView, valueForColumn: Int, row: Int) -> Field.Value?
+    func solutionView(_: SolutionView, validValueForColumn: Int, row: Int) -> Field.Value
     func solutionViewNeedShowsErrors(_: SolutionView) -> Bool
 }
 
-class SolutionView: CellView {
+final class SolutionView: CellView {
 
     private class ContentView: UIView {
 
@@ -40,14 +40,14 @@ class SolutionView: CellView {
 
             for columnIndex in 0..<solutionView.size.columns {
                 for rowIndex in 0..<solutionView.size.rows {
-                    let point = solutionView.dataSource!.solutionView(solutionView, pointForColumn: columnIndex, row: rowIndex)
+                    let value = solutionView.dataSource!.solutionView(solutionView, valueForColumn: columnIndex, row: rowIndex)
                     let rectangle: CGRect = CGRect(
                         x: solutionView.cellAspectSize * CGFloat(columnIndex),
                         y: solutionView.cellAspectSize * CGFloat(rowIndex),
                         width: solutionView.cellAspectSize,
                         height: solutionView.cellAspectSize
                     )
-                    switch point.value {
+                    switch value {
                     case .color(let color):
                         ctx.setFillColor(color.c.cgColor)
                         ctx.fill(rectangle)
@@ -74,14 +74,14 @@ class SolutionView: CellView {
                             right: 2/UIScreen.main.scale
                         )
 
-                        ctx.setStrokeColor(point.contrastColor.cgColor)
+                        ctx.setStrokeColor((value ?? Field.Value.empty).contrastColor.cgColor)
                         var rectangle = rectangle
                         rectangle = rectangle.inset(by: ficusedCellInsets)
                         ctx.setLineWidth(1)
                         ctx.stroke(rectangle)
                     }
 
-                    if let value = point.value, solutionView.dataSource!.solutionViewNeedShowsErrors(solutionView) {
+                    if let value = value, solutionView.dataSource!.solutionViewNeedShowsErrors(solutionView) {
                         let validValue = solutionView.dataSource!.solutionView(solutionView, validValueForColumn: columnIndex, row: rowIndex)
                         if validValue != value {
                             let cellAspectSize = solutionView.cellAspectSize

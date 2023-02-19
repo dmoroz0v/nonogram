@@ -24,9 +24,9 @@ extension String {
     }
 }
 
-class CrosswordLoader {
-    func load(url: URL, completion: @escaping (_ horizontalDefs: [[Field.Definition]],
-                                               _ verticalDefs: [[Field.Definition]],
+final class CrosswordLoader {
+    func load(url: URL, completion: @escaping (_ horizontalLinesHunks: [[Field.LineHunk]],
+                                               _ verticalLinesHunks: [[Field.LineHunk]],
                                                _ solution: [[Int]],
                                                _ colors: [Field.Color]) -> Void, failure: @escaping () -> Void) {
         DispatchQueue.global().async {
@@ -92,55 +92,56 @@ class CrosswordLoader {
                     }
                 }
 
-                var verticals: [[Field.Definition]] = []
-                var horizontal: [[Field.Definition]] = []
+                var verticalLinesHunks: [[Field.LineHunk]] = []
+                var horizontalLinesHunks: [[Field.LineHunk]] = []
 
-                for row in E {
+                func lineHunks(
+                    startRef: (row: Int, column: Int),
+                    endRef: (row: Int, column: Int),
+                    step: (row: Int, column: Int)
+                ) -> [Field.LineHunk] {
+                    var result: [Field.LineHunk] = []
+                    var currentRef = startRef
+                    var prevValue: Int = -1
                     var n = 0
-                    var color: String = ""
-                    var horizontalRow: [Field.Definition] = []
-                    var prevCh: Int = -1
-                    for ch in row {
-                        if prevCh != ch && prevCh != -1 && prevCh != 0 {
-                            horizontalRow.append(.init(color: .init(rgb: color), n: n))
+                    while currentRef != endRef {
+                        let value = E[currentRef.row][currentRef.column]
+                        if prevValue != value && n != 0 {
+                            let color = colors[prevValue - 1]
+                            result.append(.init(color: .init(rgb: color), n: n))
                             n = 0
                         }
-                        if ch != 0 {
+                        if value != 0 {
                             n += 1
-                            color = colors[ch - 1]
                         }
-                        prevCh = ch
+                        currentRef.row += step.row
+                        currentRef.column += step.column
+                        prevValue = value
                     }
                     if n != 0 {
-                        horizontalRow.append(.init(color: .init(rgb: color), n: n))
+                        let color = colors[prevValue - 1]
+                        result.append(.init(color: .init(rgb: color), n: n))
                     }
-                    horizontal.append(horizontalRow)
+                    return result
                 }
 
-                for i in 0..<E[0].count {
-                    var n = 0
-                    var color: String = ""
-                    var verticalRow: [Field.Definition] = []
-                    var prevCh: Int = -1
-                    for j in 0..<E.count {
-                        let ch = E[j][i]
-                        if prevCh != ch && prevCh != -1 && prevCh != 0 {
-                            verticalRow.append(.init(color: .init(rgb: color), n: n))
-                            n = 0
-                        }
-                        if ch != 0 {
-                            n += 1
-                            color = colors[ch - 1]
-                        }
-                        prevCh = ch
-                    }
-                    if n != 0 {
-                        verticalRow.append(.init(color: .init(rgb: color), n: n))
-                    }
-                    verticals.append(verticalRow)
+                for rowIndex in 0..<E.count {
+                    horizontalLinesHunks.append(lineHunks(
+                        startRef: (row: rowIndex, column: 0),
+                        endRef: (row: rowIndex, column: E[rowIndex].count),
+                        step: (row: 0, column: 1)
+                    ))
                 }
 
-                completion(horizontal, verticals, E, colors.map({
+                for columnIndex in 0..<E[0].count {
+                    verticalLinesHunks.append(lineHunks(
+                        startRef: (row: 0, column: columnIndex),
+                        endRef: (row: E.count, column: columnIndex),
+                        step: (row: 1, column: 0)
+                    ))
+                }
+
+                completion(horizontalLinesHunks, verticalLinesHunks, E, colors.map({
                     Field.Color(rgb: $0)
                 }))
             }
