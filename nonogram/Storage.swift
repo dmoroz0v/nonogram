@@ -26,24 +26,11 @@ final class Storage {
         let url: URL
         let thumbnailUrl: URL
         let title: String
-        let field: Field
+        let fullField: Field
         let layers: [String: Field]
         let selectedLayerColor: Field.Color?
         let solution: [[Int]]
-        let colors: [Field.Color]
         let showsErrors: Bool
-
-        enum CodingKeys: String, CodingKey {
-            case url
-            case thumbnailUrl = "thumbnail"
-            case title
-            case field
-            case layers
-            case selectedLayerColor
-            case solution
-            case colors
-            case showsErrors
-        }
     }
 
     private lazy var dbUrl: URL = {
@@ -62,22 +49,20 @@ final class Storage {
               url: URL,
               thumbnailUrl: URL,
               title: String,
-              field: Field,
+              fullField: Field,
               layers: [String: Field],
               selectedLayerColor: Field.Color?,
               solution: [[Int]],
-              colors: [Field.Color],
               showsErrors: Bool
     ) {
         let data = Data(
             url: url,
             thumbnailUrl: thumbnailUrl,
             title: title,
-            field: field,
+            fullField: fullField,
             layers: layers,
             selectedLayerColor: selectedLayerColor,
             solution: solution,
-            colors: colors,
             showsErrors: showsErrors
         )
         if case .saving = state[key] {
@@ -120,8 +105,9 @@ final class Storage {
 
             for item in try db.prepare(recentlySaves) {
                 let str = item[json]
-                if let d = str.data(using: .utf8) {
-                    result.append(try JSONDecoder().decode(Data.self, from: d))
+                if let rawData = str.data(using: .utf8),
+                   let data = try? JSONDecoder().decode(Data.self, from: rawData) {
+                    result.append(data)
                 }
                 if result.count == 25 {
                     break

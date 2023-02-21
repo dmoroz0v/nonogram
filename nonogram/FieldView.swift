@@ -10,52 +10,40 @@ import UIKit
 
 final class FieldView: UIView {
     private let cellAspectSize: CGFloat = 15
-    private let size: (columns: Int, rows: Int)
 
     private(set) var horizontalLinesHunksCell: LinesHunksView!
     private(set) var verticalLinesHunksCell: LinesHunksView!
     private(set) var solutionView: SolutionView!
 
-    init(frame: CGRect, field: Field) {
-        size = field.size
+    init(
+        frame: CGRect,
+        solutionSize: (columns: Int, rows: Int),
+        verticalMaxHunks: Int,
+        horizontalMaxHunks: Int
+    ) {
         super.init(frame: frame)
 
         solutionView = SolutionView(frame: .zero, panView: self)
 
-        horizontalLinesHunksCell = LinesHunksView(frame: .zero, panView: self)
-        verticalLinesHunksCell = LinesHunksView(frame: .zero, panView: self)
-
-//        let maxHorizintalHunks = field.horizintalLinesHunks.reduce(0) { value, hunks in
-//            if hunks.count > value {
-//                return hunks.count
-//            }
-//            return value
-//        }
-//        let maxVerticalHunks = field.verticalLinesHunks.reduce(0) { value, hunks in
-//            if hunks.count > value {
-//                return hunks.count
-//            }
-//            return value
-//        }
+        horizontalLinesHunksCell = LinesHunksView(frame: .zero, panView: self, maxHunks: horizontalMaxHunks)
+        verticalLinesHunksCell = LinesHunksView(frame: .zero, panView: self, maxHunks: verticalMaxHunks)
 
         let leftTopCell = CellView()
         leftTopCell.translatesAutoresizingMaskIntoConstraints = false
         addSubview(leftTopCell)
 
         solutionView.translatesAutoresizingMaskIntoConstraints = false
-        solutionView.size = field.size
+        solutionView.size = solutionSize
         solutionView.cellAspectSize = cellAspectSize
         addSubview(solutionView)
 
         horizontalLinesHunksCell.translatesAutoresizingMaskIntoConstraints = false
         horizontalLinesHunksCell.cellAspectSize = cellAspectSize
-        horizontalLinesHunksCell.linesHunks = field.horizintalLinesHunks
         horizontalLinesHunksCell.axis = .horizontal
         addSubview(horizontalLinesHunksCell)
 
         verticalLinesHunksCell.translatesAutoresizingMaskIntoConstraints = false
         verticalLinesHunksCell.cellAspectSize = cellAspectSize
-        verticalLinesHunksCell.linesHunks = field.verticalLinesHunks
         verticalLinesHunksCell.axis = .vertical
         addSubview(verticalLinesHunksCell)
 
@@ -77,8 +65,8 @@ final class FieldView: UIView {
             solutionView.leadingAnchor.constraint(equalTo: horizontalLinesHunksCell.trailingAnchor),
             solutionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             solutionView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            solutionView.widthAnchor.constraint(equalToConstant: CGFloat(field.size.columns) * cellAspectSize),
-            solutionView.heightAnchor.constraint(equalToConstant: CGFloat(field.size.rows) * cellAspectSize),
+            solutionView.widthAnchor.constraint(equalToConstant: CGFloat(solutionSize.columns) * cellAspectSize),
+            solutionView.heightAnchor.constraint(equalToConstant: CGFloat(solutionSize.rows) * cellAspectSize),
         ])
     }
 

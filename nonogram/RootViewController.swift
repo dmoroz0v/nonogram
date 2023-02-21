@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  RootViewController.swift
 //  nonogram
 //
 //  Created by Denis S. Morozov on 12.01.2023.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class ViewController: UIViewController, ResolvingViewControllerDelegate, PagesViewControllerDelegate {
+final class RootViewController: UIViewController, ResolvingViewControllerDelegate, PagesViewControllerDelegate {
 
     private var currentViewController: UIViewController?
     private let crosswordLoader = CrosswordLoader()
@@ -19,11 +19,10 @@ final class ViewController: UIViewController, ResolvingViewControllerDelegate, P
                 url: item.url,
                 thumbnailUrl: item.thumbnailUrl,
                 title: item.title,
-                field: data.field,
+                fullField: data.fullField,
                 layers: data.layers,
                 selectedLayerColor: data.selectedLayerColor,
                 solution: data.solution,
-                colors: data.colors,
                 showsErrors: data.showsErrors
             )
 
@@ -73,11 +72,10 @@ final class ViewController: UIViewController, ResolvingViewControllerDelegate, P
 
     func resolvingViewController(
         _ vc: ResolvingViewController,
-        didChangeState field: Field,
+        didChangeState fullField: Field,
         layers: [String : Field],
         selectedLayerColor: Field.Color?,
         solution: [[Int]],
-        colors: [Field.Color],
         url: URL,
         thumbnailUrl: URL,
         title: String,
@@ -88,11 +86,10 @@ final class ViewController: UIViewController, ResolvingViewControllerDelegate, P
             url: url,
             thumbnailUrl: thumbnailUrl,
             title: title,
-            field: field,
+            fullField: fullField,
             layers: layers,
             selectedLayerColor: selectedLayerColor,
             solution: solution,
-            colors: colors,
             showsErrors: showsErrors
         )
     }

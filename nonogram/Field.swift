@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-struct Field: Codable {
+final class Field: Codable {
     struct Color: Codable, Equatable {
         var c: UIColor
         var id: String
@@ -84,10 +84,22 @@ struct Field: Codable {
 
     var values: [[Value?]]
 
-    var horizintalLinesHunks: [[LineHunk]]
+    var horizontalLinesHunks: [[LineHunk]]
     var verticalLinesHunks: [[LineHunk]]
     var colors: [Color]
     var size: (columns: Int, rows: Int) {
         return (columns: values[0].count, rows: values.count)
+    }
+
+    init(
+        values: [[Value?]],
+        horizontalLinesHunks: [[LineHunk]],
+        verticalLinesHunks: [[LineHunk]],
+        colors: [Color]
+    ) {
+        self.values = values
+        self.horizontalLinesHunks = horizontalLinesHunks
+        self.verticalLinesHunks = verticalLinesHunks
+        self.colors = colors
     }
 }

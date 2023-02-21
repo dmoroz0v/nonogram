@@ -13,81 +13,24 @@ protocol ControlsPanelViewControllerDelegate: AnyObject {
     func controlsPanelViewController(_: ControlsPanelViewController, didSelectPen: Pen)
     func controlsPanelViewController(_: ControlsPanelViewController, didSelectLayerColor: Field.Color)
     func controlsPanelViewControllerDidTapCloseLayer(_: ControlsPanelViewController)
+    func controlsPanelViewControllerColors(_: ControlsPanelViewController) -> [Field.Color]
 }
 
 final class ControlsPanelViewController: UIViewController {
 
-    private final class SelectPenViewController: UIViewController {
-
-        var pens: [Pen] = []
-
-        var didSelectPen: ((_ pen: Pen) -> Void)?
-
-        private let stackView = UIStackView()
-
-        override func viewDidLoad() {
-            super.viewDidLoad()
-
-            view.backgroundColor = .lightGray
-
-            stackView.translatesAutoresizingMaskIntoConstraints = false
-            stackView.axis = .vertical
-
-            view.addSubview(stackView)
-
-            let itemAspectSize: CGFloat = 50
-
-            for pen in pens {
-                let v: UIView
-                switch pen {
-                case .empty:
-                    v = ControlsPanelView.EmptyView(dotRadius: 3)
-                case .color(let color):
-                    v = UIView()
-                    v.backgroundColor = color.c
-                }
-                stackView.addArrangedSubview(v)
-
-                let tapGR = UITapGestureRecognizer(target: self, action: #selector(didTap(_:)))
-                v.addGestureRecognizer(tapGR)
-
-                NSLayoutConstraint.activate([
-                    v.heightAnchor.constraint(equalToConstant: itemAspectSize),
-                    v.widthAnchor.constraint(equalToConstant: itemAspectSize),
-                ])
-            }
-
-            preferredContentSize = CGSize(width: itemAspectSize, height: CGFloat(pens.count) * itemAspectSize)
-        }
-
-        override func viewDidLayoutSubviews() {
-            super.viewDidLayoutSubviews()
-
-            var frame = CGRect(origin: .zero, size: preferredContentSize)
-            if popoverPresentationController?.arrowDirection == .left {
-                frame.origin.x = view.frame.width - preferredContentSize.width
-            } else if popoverPresentationController?.arrowDirection == .up {
-                frame.origin.y = view.frame.height - preferredContentSize.height
-            }
-            stackView.frame = frame
-        }
-
-        @objc private func didTap(_ tapGR: UITapGestureRecognizer) {
-            let i = (stackView.arrangedSubviews.firstIndex(where: { $0 === tapGR.view }))!
-            didSelectPen?(pens[i])
-        }
+    enum Style {
+        case `default`, layer
     }
 
     weak var delegate: ControlsPanelViewControllerDelegate?
 
-    var colors: [Field.Color] = []
     var pen: Pen = .empty {
         didSet {
             update()
         }
     }
 
-    var selectedLayerColor: Field.Color? {
+    var style: Style = .default {
         didSet {
             update()
         }
@@ -111,10 +54,11 @@ final class ControlsPanelViewController: UIViewController {
             return
         }
 
-        if selectedLayerColor != nil {
-            controlsPanelView.showLayerState()
-        } else {
+        switch style {
+        case .default:
             controlsPanelView.showDefaultState()
+        case .layer:
+            controlsPanelView.showLayerState()
         }
 
         controlsPanelView.update(with: pen)
@@ -135,11 +79,8 @@ extension ControlsPanelViewController: ControlsPanelViewDelegate {
     func controlsPanelView(_: ControlsPanelView, didTapColors colorsView: UIView) {
         let popoverContentController = SelectPenViewController()
         self.popoverContentController = popoverContentController
-        if let selectedLayerColor {
-            popoverContentController.pens = [.empty, .color(selectedLayerColor)]
-        } else {
-            popoverContentController.pens = [.empty] + colors.map({ .color($0) })
-        }
+        let colors = delegate?.controlsPanelViewControllerColors(self) ?? []
+        popoverContentController.pens = [.empty] + colors.map({ .color($0) })
         popoverContentController.modalPresentationStyle = .popover
         popoverContentController.didSelectPen = { [weak self] pen in
             guard let self else {
@@ -161,6 +102,7 @@ extension ControlsPanelViewController: ControlsPanelViewDelegate {
     func controlsPanelView(_: ControlsPanelView, didTapLayers layersView: UIView) {
         let popoverContentController = SelectPenViewController()
         self.popoverContentController = popoverContentController
+        let colors = delegate?.controlsPanelViewControllerColors(self) ?? []
         popoverContentController.pens = colors.map({ .color($0) })
         popoverContentController.modalPresentationStyle = .popover
         popoverContentController.didSelectPen = { [weak self] pen in
@@ -182,4 +124,65 @@ extension ControlsPanelViewController: ControlsPanelViewDelegate {
         }
     }
 
+}
+
+private final class SelectPenViewController: UIViewController {
+
+    var pens: [Pen] = []
+
+    var didSelectPen: ((_ pen: Pen) -> Void)?
+
+    private let stackView = UIStackView()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = .lightGray
+
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+
+        view.addSubview(stackView)
+
+        let itemAspectSize: CGFloat = 50
+
+        for pen in pens {
+            let v: UIView
+            switch pen {
+            case .empty:
+                v = ControlsPanelView.EmptyView(dotRadius: 3)
+            case .color(let color):
+                v = UIView()
+                v.backgroundColor = color.c
+            }
+            stackView.addArrangedSubview(v)
+
+            let tapGR = UITapGestureRecognizer(target: self, action: #selector(didTap(_:)))
+            v.addGestureRecognizer(tapGR)
+
+            NSLayoutConstraint.activate([
+                v.heightAnchor.constraint(equalToConstant: itemAspectSize),
+                v.widthAnchor.constraint(equalToConstant: itemAspectSize),
+            ])
+        }
+
+        preferredContentSize = CGSize(width: itemAspectSize, height: CGFloat(pens.count) * itemAspectSize)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        var frame = CGRect(origin: .zero, size: preferredContentSize)
+        if popoverPresentationController?.arrowDirection == .left {
+            frame.origin.x = view.frame.width - preferredContentSize.width
+        } else if popoverPresentationController?.arrowDirection == .up {
+            frame.origin.y = view.frame.height - preferredContentSize.height
+        }
+        stackView.frame = frame
+    }
+
+    @objc private func didTap(_ tapGR: UITapGestureRecognizer) {
+        let i = (stackView.arrangedSubviews.firstIndex(where: { $0 === tapGR.view }))!
+        didSelectPen?(pens[i])
+    }
 }

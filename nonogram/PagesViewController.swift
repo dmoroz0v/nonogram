@@ -7,255 +7,9 @@
 
 import Foundation
 import UIKit
-import SwiftSoup
-import SwiftUI
 
 protocol PagesViewControllerDelegate: AnyObject {
     func pagesViewController(_: PagesViewController, didSelectItem: ListItem, savedData: Storage.Data?)
-}
-
-private extension Elements {
-    func tryFirst() throws -> Element {
-        if let first = first() {
-            return first
-        }
-        throw NSError()
-    }
-}
-
-final class ControlsView: UIView {
-
-    private final class Separator: UIView {
-        private let separator = UIView()
-        override init(frame: CGRect) {
-            super.init(frame: frame)
-
-            separator.translatesAutoresizingMaskIntoConstraints = false
-            separator.backgroundColor = .lightGray
-            addSubview(separator)
-
-            NSLayoutConstraint.activate([
-                separator.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-                separator.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-                separator.leadingAnchor.constraint(equalTo: leadingAnchor),
-                separator.trailingAnchor.constraint(equalTo: trailingAnchor),
-                widthAnchor.constraint(equalToConstant: 1)
-            ])
-        }
-
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-    }
-
-    let prevPageButton = UIButton()
-    let currentPageButton = UIButton()
-    let nextPageButton = UIButton()
-    let lastButton = UIButton()
-
-    private let stackView = UIStackView()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        backgroundColor = .white
-        layer.cornerRadius = 24
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowRadius = 16
-        layer.shadowOpacity = 0.2
-
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .horizontal
-        addSubview(stackView)
-
-        let font = UIFont.systemFont(ofSize: 18)
-
-        prevPageButton.setTitle("< предыдущая", for: .normal)
-        prevPageButton.setTitleColor(.black, for: .normal)
-        prevPageButton.setTitleColor(.lightGray, for: .disabled)
-        prevPageButton.titleLabel?.font = font
-
-        currentPageButton.setTitleColor(.black, for: .normal)
-        currentPageButton.setTitle("1", for: .normal)
-        currentPageButton.titleLabel?.font = font
-
-        nextPageButton.setTitle("следующая >", for: .normal)
-        nextPageButton.setTitleColor(.black, for: .normal)
-        nextPageButton.setTitleColor(.lightGray, for: .disabled)
-        nextPageButton.titleLabel?.font = font
-
-        lastButton.setTitle("недавние", for: .normal)
-        lastButton.setTitleColor(.black, for: .normal)
-        lastButton.setTitleColor(.lightGray, for: .disabled)
-        lastButton.titleLabel?.font = font
-
-        let firstSeparator = Separator()
-        let secondSeparator = Separator()
-        let thirdSeparator = Separator()
-        [prevPageButton, firstSeparator, currentPageButton, secondSeparator, nextPageButton, thirdSeparator, lastButton].forEach {
-            stackView.addArrangedSubview($0)
-        }
-
-        stackView.setCustomSpacing(16, after: prevPageButton)
-        stackView.setCustomSpacing(4, after: firstSeparator)
-        stackView.setCustomSpacing(4, after: currentPageButton)
-        stackView.setCustomSpacing(16, after: secondSeparator)
-        stackView.setCustomSpacing(16, after: nextPageButton)
-        stackView.setCustomSpacing(16, after: thirdSeparator)
-
-        NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            stackView.topAnchor.constraint(equalTo: topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-
-            heightAnchor.constraint(equalToConstant: 48),
-        ])
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-final class PagesLoader {
-
-    struct Result {
-        var items: [ListItem]
-        var pagesCount: Int
-    }
-
-    struct Filter: Equatable {
-        var name: String
-        var url: URL
-    }
-
-    let filters: [Filter] = [
-        Filter(name: "Все", url: URL(string: "https://www.nonograms.ru/nonograms2/p")!),
-        Filter(name: "Крошечные", url: URL(string: "https://www.nonograms.ru/nonograms2/size/xsmall/p")!),
-        Filter(name: "Маленькие", url: URL(string: "https://www.nonograms.ru/nonograms2/size/small/p")!),
-        Filter(name: "Средние", url: URL(string: "https://www.nonograms.ru/nonograms2/size/medium/p")!),
-        Filter(name: "Большие", url: URL(string: "https://www.nonograms.ru/nonograms2/size/large/p")!),
-        Filter(name: "Огромные", url: URL(string: "https://www.nonograms.ru/nonograms2/size/xlarge/p")!),
-        Filter(name: "Гигантские", url: URL(string: "https://www.nonograms.ru/nonograms2/size/xxlarge/p")!),
-    ]
-
-    private var isLoading = false
-
-    func loadPage(_ page: Int, filter: Filter, completaion: @escaping (_ items: Result?) -> Void) {
-        if isLoading {
-            return
-        }
-        isLoading = true
-        DispatchQueue.global().async {
-            do {
-                let data = try Data(contentsOf: filter.url.appendingPathComponent("\(page)"))
-
-                if let s = String(data: data, encoding: .utf8) {
-                    let doc: Document = try SwiftSoup.parse(s)
-
-                    var result: [ListItem] = []
-                    for tr in try doc.select("table.nonogram_list").tryFirst().select("tr") {
-                        let nonogramImg = try tr.select("td.nonogram_img")
-                        if let nonogramImg = nonogramImg.first() {
-                            let urlString = try nonogramImg.select("a").tryFirst().attr("href")
-                            var iconUrlString = try nonogramImg.select("img").tryFirst().attr("src")
-                            iconUrlString = iconUrlString.replacingOccurrences(of: "_0.png", with: "_1.png")
-                            let name = try nonogramImg.select("img").tryFirst().attr("title")
-                            if let url = URL(string: urlString), let thumbnailUrl = URL(string: iconUrlString) {
-                                result.append(ListItem(url: url, thumbnailUrl: thumbnailUrl, title: name))
-                            }
-                        }
-                    }
-
-                    let pages = try doc.select("div.pager").tryFirst().select("div").tryFirst().select("a")
-
-                    var pagesCount: Int?
-                    for a in pages.reversed() {
-                        if let count = Int(try a.text()) {
-                            pagesCount = count
-                            break
-                        }
-                    }
-
-                    guard let pagesCount else {
-                        DispatchQueue.main.async {
-                            self.isLoading = false
-                            completaion(nil)
-                        }
-                        return
-                    }
-
-                    let group = DispatchGroup()
-
-                    result.enumerated().forEach { index, item in
-                        group.enter()
-                        DispatchQueue.global().async {
-                            if let data = try? Data(contentsOf: item.thumbnailUrl) {
-                                if let image = UIImage(data: data) {
-                                    result[index].image = image
-                                }
-                            }
-                            group.leave()
-                        }
-                    }
-
-                    group.wait()
-
-                    DispatchQueue.main.async {
-                        self.isLoading = false
-                        completaion(Result(items: result, pagesCount: pagesCount))
-                    }
-
-                } else {
-                    DispatchQueue.main.async {
-                        self.isLoading = false
-                        completaion(nil)
-                    }
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                    completaion(nil)
-                }
-            }
-        }
-    }
-}
-
-final class FilterView: UIView {
-    let label = UILabel()
-
-    var isSelected = false {
-        didSet {
-            if isSelected {
-                backgroundColor = .lightGray
-            } else {
-                backgroundColor = UIColor(white: 0.85, alpha: 1)
-            }
-        }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(label)
-
-        layer.masksToBounds = true
-        layer.cornerRadius = 16
-        backgroundColor = UIColor(white: 0.85, alpha: 1)
-
-        NSLayoutConstraint.activate([
-            label.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-        ])
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
 }
 
 final class PagesViewController: UIViewController {
@@ -326,7 +80,7 @@ final class PagesViewController: UIViewController {
         return pagesLoader.filters[state.currentFilter]
     }
 
-    private let controlsView = ControlsView()
+    private let controlsView = PagesControlsView()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
 
     private let storage: Storage
@@ -382,7 +136,7 @@ final class PagesViewController: UIViewController {
         filtersScrollView.addSubview(filtersStackView)
 
         pagesLoader.filters.enumerated().forEach { index, filter in
-            let filterView = FilterView()
+            let filterView = PagesFilterView()
             filterView.label.text = filter.name
             filterView.tag = index
             let tapGR = UITapGestureRecognizer(target: self, action: #selector(selectFilter(_:)))
@@ -453,7 +207,7 @@ final class PagesViewController: UIViewController {
         controlsView.currentPageButton.setTitle("\(state.currentPage)", for: .normal)
         controlsView.lastButton.isEnabled = storage.hasRecently()
         for (filterIndex, filterView) in filtersStackView.arrangedSubviews.enumerated() {
-            (filterView as! FilterView).isSelected = selectedFilter == pagesLoader.filters[filterIndex]
+            (filterView as! PagesFilterView).isSelected = selectedFilter == pagesLoader.filters[filterIndex]
         }
     }
 

@@ -20,7 +20,6 @@ protocol ResolvingViewControllerDelegate: AnyObject {
         layers: [String: Field],
         selectedLayerColor: Field.Color?,
         solution: [[Int]],
-        colors: [Field.Color],
         url: URL,
         thumbnailUrl: URL,
         title: String,
@@ -51,14 +50,19 @@ final class ResolvingViewController: UIViewController {
     private let thumbnailUrl: URL
     private let crosswordTitle: String
     private let solution: [[Int]]
-    private let colors: [Field.Color]
-    private var field: Field!
-    private var sourceField: Field!
+    private var fullField: Field
     private var layers: [String: Field] = [:]
+    private var field: Field {
+        if let selectedLayerColor {
+            return layers[selectedLayerColor.id]!
+        } else {
+            return fullField
+        }
+    }
     private var showsErrors: Bool = false
     private var selectedLayerColor: Field.Color? {
         didSet {
-            controlsPanelVC.selectedLayerColor = selectedLayerColor
+            controlsPanelVC.style = selectedLayerColor != nil ? .layer : .default
         }
     }
     private var lastColoredPen: Pen?
@@ -83,17 +87,16 @@ final class ResolvingViewController: UIViewController {
         self.url = url
         self.thumbnailUrl = thumbnailUrl
         self.crosswordTitle = title
-        field = Field(
+        fullField = Field(
             values: Array<[Field.Value?]>(
                 repeating: Array<Field.Value?>(repeating: nil, count: verticalLinesHunks.count),
                 count: horizontalLinesHunks.count
             ),
-            horizintalLinesHunks: horizontalLinesHunks,
+            horizontalLinesHunks: horizontalLinesHunks,
             verticalLinesHunks: verticalLinesHunks,
             colors: colors
         )
         self.solution = solution
-        self.colors = colors
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -101,25 +104,19 @@ final class ResolvingViewController: UIViewController {
         url: URL,
         thumbnailUrl: URL,
         title: String,
-        field: Field,
+        fullField: Field,
         layers: [String: Field],
         selectedLayerColor: Field.Color?,
         solution: [[Int]],
-        colors: [Field.Color],
         showsErrors: Bool
     ) {
         self.url = url
         self.thumbnailUrl = thumbnailUrl
         self.crosswordTitle = title
-        self.field = field
+        self.fullField = fullField
         self.layers = layers
         self.selectedLayerColor = selectedLayerColor
-        if let selectedLayerColor {
-            self.sourceField = field
-            self.field = layers[selectedLayerColor.id]
-        }
         self.solution = solution
-        self.colors = colors
         self.showsErrors = showsErrors
         super.init(nibName: nil, bundle: nil)
     }
@@ -139,9 +136,12 @@ final class ResolvingViewController: UIViewController {
 
         scrollView.contentInset = .init(top: 60, left: 40, bottom: 60, right: 40)
 
-        let field: Field! = (sourceField ?? field)
-
-        fieldView = FieldView(frame: .zero, field: field)
+        fieldView = FieldView(
+            frame: .zero,
+            solutionSize: fullField.size,
+            verticalMaxHunks: fullField.verticalLinesHunks.map({ $0.count }).max()!,
+            horizontalMaxHunks: fullField.horizontalLinesHunks.map({ $0.count }).max()!
+        )
         fieldView.translatesAutoresizingMaskIntoConstraints = false
 
         fieldView.horizontalLinesHunksCell.delegate = self
@@ -160,7 +160,6 @@ final class ResolvingViewController: UIViewController {
         scrollView.addSubview(fieldView)
 
         controlsPanelVC.view.translatesAutoresizingMaskIntoConstraints = false
-        controlsPanelVC.colors = field.colors
         controlsPanelVC.delegate = self
         addChild(controlsPanelVC)
         view.addSubview(controlsPanelVC.view)
@@ -200,8 +199,11 @@ final class ResolvingViewController: UIViewController {
         view.addInteraction(pencilInteraction)
 
         controlsPanelVC.pen = pen
-        controlsPanelVC.selectedLayerColor = selectedLayerColor
-        applyState()
+        controlsPanelVC.style = selectedLayerColor != nil ? .layer : .default
+        fieldView.horizontalLinesHunksCell.linesHunks = fullField.horizontalLinesHunks
+        fieldView.verticalLinesHunksCell.linesHunks = fullField.verticalLinesHunks
+
+        updateUI()
     }
 
     override func viewDidLayoutSubviews() {
@@ -276,9 +278,13 @@ final class ResolvingViewController: UIViewController {
         switch action {
         case .selectLayer(let penColor):
             self.pen = .color(penColor)
-            sourceField = field
-            if layers[penColor.id] == nil {
-                layers[penColor.id] = Field(
+
+            var layerField: Field
+
+            if let field = layers[penColor.id] {
+                layerField = field
+            } else {
+                layerField = Field(
                     values: field.values.map({ row in
                         var row = row
                         for (rowIndex, value) in row.enumerated() {
@@ -288,67 +294,67 @@ final class ResolvingViewController: UIViewController {
                         }
                         return row
                     }),
-                    horizintalLinesHunks: sourceField.horizintalLinesHunks.map({ lineHunks in
+                    horizontalLinesHunks: field.horizontalLinesHunks.map({ lineHunks in
                         return lineHunks.filter { hunk in
                             hunk.color.id == penColor.id
                         }
                     }),
-                    verticalLinesHunks: sourceField.verticalLinesHunks.map({ lineHunks in
+                    verticalLinesHunks: field.verticalLinesHunks.map({ lineHunks in
                         return lineHunks.filter { hunk in
                             hunk.color.id == penColor.id
                         }
                     }),
-                    colors: field.colors
+                    colors: field.colors.filter({
+                        $0.id == penColor.id
+                    })
                 )
+                layers[penColor.id] = layerField
             }
 
-            field = layers[penColor.id]
-
-            for (rowIndex, row) in sourceField.values.enumerated() {
+            for (rowIndex, row) in field.values.enumerated() {
                 for (columnIndex, value) in row.enumerated() {
-                    if field.horizintalLinesHunks[rowIndex].isEmpty || field.verticalLinesHunks[columnIndex].isEmpty {
-                        field.values[rowIndex][columnIndex] = .empty
+                    if layerField.horizontalLinesHunks[rowIndex].isEmpty ||
+                        layerField.verticalLinesHunks[columnIndex].isEmpty
+                    {
+                        layerField.values[rowIndex][columnIndex] = .empty
                         continue
                     }
                     if case .color(let c) = value {
                         if c.id == penColor.id {
-                            field.values[rowIndex][columnIndex] = value
+                            layerField.values[rowIndex][columnIndex] = value
                         } else {
-                            field.values[rowIndex][columnIndex] = .empty
+                            layerField.values[rowIndex][columnIndex] = .empty
                         }
                     }
                     if value == .empty {
-                        field.values[rowIndex][columnIndex] = value
+                        layerField.values[rowIndex][columnIndex] = value
                     }
                 }
             }
 
             selectedLayerColor = penColor
         case .closeLayer:
-            layers[selectedLayerColor!.id] = field
-            field = sourceField
-            sourceField = nil
-
-            for (rowIndex, row) in layers[selectedLayerColor!.id]!.values.enumerated() {
+            for (rowIndex, row) in field.values.enumerated() {
                 for (columnIndex, value) in row.enumerated() {
                     if case .color(let c) = value, c == selectedLayerColor {
-                        field.values[rowIndex][columnIndex] = value
+                        fullField.values[rowIndex][columnIndex] = value
                     }
                 }
             }
-
             selectedLayerColor = nil
         }
 
-        applyState()
+        fieldView.horizontalLinesHunksCell.linesHunks = field.horizontalLinesHunks
+        fieldView.verticalLinesHunksCell.linesHunks = field.verticalLinesHunks
+
+        updateUI()
 
         delegate?.resolvingViewController(
             self,
-            didChangeState: sourceField ?? field,
+            didChangeState: fullField,
             layers: layers,
             selectedLayerColor: selectedLayerColor,
             solution: solution,
-            colors: colors,
             url: url,
             thumbnailUrl: thumbnailUrl,
             title: crosswordTitle,
@@ -356,7 +362,7 @@ final class ResolvingViewController: UIViewController {
         )
     }
 
-    private func applyState() {
+    private func updateUI() {
 
         var isResolved = true
         for rowIndex in 0..<field.size.rows {
@@ -373,9 +379,7 @@ final class ResolvingViewController: UIViewController {
         }
 
         fieldView.solutionView.setNeedsDisplay()
-        fieldView.horizontalLinesHunksCell.linesHunks = field.horizintalLinesHunks
         fieldView.horizontalLinesHunksCell.setNeedsDisplay()
-        fieldView.verticalLinesHunksCell.linesHunks = field.verticalLinesHunks
         fieldView.verticalLinesHunksCell.setNeedsDisplay()
     }
 
@@ -413,7 +417,7 @@ final class ResolvingViewController: UIViewController {
         if value == 0 {
             return .empty
         } else {
-            let color = colors[value - 1]
+            let color = fullField.colors[value - 1]
             if let selectedLayerColor {
                 if selectedLayerColor.id == color.id {
                     return .color(color)
@@ -467,7 +471,7 @@ extension ResolvingViewController: UIPencilInteractionDelegate {
         } else {
             switch pen {
             case .empty:
-                pen = lastColoredPen ?? .color(colors.first!)
+                pen = lastColoredPen ?? .color(fullField.colors.first!)
             case .color:
                 pen = .empty
             }
@@ -508,7 +512,35 @@ extension ResolvingViewController: UIPencilInteractionDelegate {
 }
 
 extension ResolvingViewController: LinesHunksViewDelegate {
-    func linesHunksView(_ linesHunksView: LinesHunksView, lineForIndex index: Int) -> [Field.Value?] {
+
+    func linesHunksView(_ linesHunksView: LinesHunksView, strikedHunksForIndex hunksIndex: Int) -> [Int] {
+        var result: [Int] = []
+        let line = lineForIndex(hunksIndex, for: linesHunksView)
+
+        // >> проходимся от начала линии до конца и пытаемся вычеркнуть цифры слева или сверху
+        result += strikedHunks(
+            line: line,
+            range: Array(0..<line.count),
+            hunkStartIndex: 0,
+            increment: 1,
+            hunksIndex: hunksIndex,
+            linesHunksView: linesHunksView)
+        // <<
+
+        // >> проходимся от конца линии до начала и пытаемся вычеркнуть цифры справа или снизу
+        result += strikedHunks(
+            line: line,
+            range: (0..<line.count).reversed(),
+            hunkStartIndex: linesHunksView.linesHunks[hunksIndex].count - 1,
+            increment: -1,
+            hunksIndex: hunksIndex,
+            linesHunksView: linesHunksView)
+        // <<
+
+        return result
+    }
+
+    private func lineForIndex(_ index: Int, for linesHunksView: LinesHunksView) -> [Field.Value?] {
         if linesHunksView.axis == .horizontal {
             let row = index
             return field.values[row]
@@ -521,9 +553,49 @@ extension ResolvingViewController: LinesHunksViewDelegate {
             return result
         }
     }
+
+    private func strikedHunks(
+        line: [Field.Value?],
+        range: [Int],
+        hunkStartIndex: Int,
+        increment: Int,
+        hunksIndex: Int,
+        linesHunksView: LinesHunksView
+    ) -> [Int] {
+        var result: [Int] = []
+        var hunkIndex = hunkStartIndex
+        var n = 0
+        for valueIndex in range {
+            let value = line[valueIndex]
+            if value == nil {
+                break
+            }
+            if value != .empty {
+                n += 1
+            }
+            if n != 0
+                && (valueIndex + 1 == line.count || valueIndex == 0 || line[valueIndex + increment] != value)
+                && hunkIndex >= 0 && hunkIndex < linesHunksView.linesHunks[hunksIndex].count
+            {
+                let lineHunks = linesHunksView.linesHunks[hunksIndex]
+                let hunk = lineHunks[hunkIndex]
+                if n == hunk.n {
+                    result.append(hunkIndex)
+                    n = 0
+                    hunkIndex += increment
+                }
+            }
+        }
+        return result
+    }
 }
 
 extension ResolvingViewController: ControlsPanelViewControllerDelegate {
+
+    func controlsPanelViewControllerColors(_: ControlsPanelViewController) -> [Field.Color] {
+        return field.colors
+    }
+
     func controlsPanelViewControllerDidTapExit(_: ControlsPanelViewController) {
         delegate?.resolvingViewControllerDidTapExit(self)
     }
@@ -583,15 +655,14 @@ extension ResolvingViewController: SolutionViewDelegate, SolutionViewDataSource 
             layers[selectedLayerColor.id] = field
         }
 
-        applyState()
+        updateUI()
 
         delegate?.resolvingViewController(
             self,
-            didChangeState: sourceField ?? field,
+            didChangeState: fullField,
             layers: layers,
             selectedLayerColor: selectedLayerColor,
             solution: solution,
-            colors: colors,
             url: url,
             thumbnailUrl: thumbnailUrl,
             title: crosswordTitle,
