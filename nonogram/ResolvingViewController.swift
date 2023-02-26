@@ -31,7 +31,7 @@ protocol ResolvingViewControllerDelegate: AnyObject {
 
 final class ResolvingViewController: UIViewController {
 
-    enum UpdateAction {
+    enum SwitchLayerAction {
         case selectLayer(penColor: Field.Color)
         case closeLayer
     }
@@ -200,8 +200,8 @@ final class ResolvingViewController: UIViewController {
 
         controlsPanelVC.pen = pen
         controlsPanelVC.style = selectedLayerColor != nil ? .layer : .default
-        fieldView.horizontalLinesHunksCell.linesHunks = fullField.horizontalLinesHunks
-        fieldView.verticalLinesHunksCell.linesHunks = fullField.verticalLinesHunks
+        fieldView.horizontalLinesHunksCell.linesHunks = field.horizontalLinesHunks
+        fieldView.verticalLinesHunksCell.linesHunks = field.verticalLinesHunks
 
         updateUI()
     }
@@ -274,7 +274,7 @@ final class ResolvingViewController: UIViewController {
         return columnIsResolved
     }
 
-    private func update(with action: UpdateAction) {
+    private func switchLayer(with action: SwitchLayerAction) {
         switch action {
         case .selectLayer(let penColor):
             self.pen = .color(penColor)
@@ -313,12 +313,6 @@ final class ResolvingViewController: UIViewController {
 
             for (rowIndex, row) in field.values.enumerated() {
                 for (columnIndex, value) in row.enumerated() {
-                    if layerField.horizontalLinesHunks[rowIndex].isEmpty ||
-                        layerField.verticalLinesHunks[columnIndex].isEmpty
-                    {
-                        layerField.values[rowIndex][columnIndex] = .empty
-                        continue
-                    }
                     if case .color(let c) = value {
                         if c.id == penColor.id {
                             layerField.values[rowIndex][columnIndex] = value
@@ -601,11 +595,11 @@ extension ResolvingViewController: ControlsPanelViewControllerDelegate {
     }
 
     func controlsPanelViewController(_: ControlsPanelViewController, didSelectLayerColor color: Field.Color) {
-        update(with: .selectLayer(penColor: color))
+        switchLayer(with: .selectLayer(penColor: color))
     }
 
     func controlsPanelViewControllerDidTapCloseLayer(_: ControlsPanelViewController) {
-        update(with: .closeLayer)
+        switchLayer(with: .closeLayer)
     }
 
     func controlsPanelViewController(_: ControlsPanelViewController, didSelectPen pen: Pen) {
