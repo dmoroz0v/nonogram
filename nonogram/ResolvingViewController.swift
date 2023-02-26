@@ -286,13 +286,7 @@ final class ResolvingViewController: UIViewController {
             } else {
                 layerField = Field(
                     values: field.values.map({ row in
-                        var row = row
-                        for (rowIndex, value) in row.enumerated() {
-                            if case .color(let c) = value, c.id != penColor.id {
-                                row[rowIndex] = .empty
-                            }
-                        }
-                        return row
+                        return row.map({ _ in return nil })
                     }),
                     horizontalLinesHunks: field.horizontalLinesHunks.map({ lineHunks in
                         return lineHunks.filter { hunk in
@@ -313,14 +307,18 @@ final class ResolvingViewController: UIViewController {
 
             for (rowIndex, row) in field.values.enumerated() {
                 for (columnIndex, value) in row.enumerated() {
-                    if case .color(let c) = value {
+                    switch value {
+                    case .none:
+                        if layerField.values[rowIndex][columnIndex] != .empty {
+                            layerField.values[rowIndex][columnIndex] = nil
+                        }
+                    case .color(let c):
                         if c.id == penColor.id {
                             layerField.values[rowIndex][columnIndex] = value
                         } else {
                             layerField.values[rowIndex][columnIndex] = .empty
                         }
-                    }
-                    if value == .empty {
+                    case .empty:
                         layerField.values[rowIndex][columnIndex] = value
                     }
                 }
@@ -330,11 +328,17 @@ final class ResolvingViewController: UIViewController {
         case .closeLayer:
             for (rowIndex, row) in field.values.enumerated() {
                 for (columnIndex, value) in row.enumerated() {
-                    if case .color(let c) = value, c == selectedLayerColor {
+                    switch value {
+                    case .none, .empty:
+                        if fullField.values[rowIndex][columnIndex] == .color(selectedLayerColor!) {
+                            fullField.values[rowIndex][columnIndex] = nil
+                        }
+                    case .color:
                         fullField.values[rowIndex][columnIndex] = value
                     }
                 }
             }
+
             selectedLayerColor = nil
         }
 
