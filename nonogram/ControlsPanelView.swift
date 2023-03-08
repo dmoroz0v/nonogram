@@ -102,7 +102,7 @@ final class ControlsPanelView: UIView {
     }
 
     func showLayerState() {
-        showButtons([exitButton, colorsButton, closeLayerButton])
+        showButtons([exitButton, colorsButton, layersButton, closeLayerButton])
     }
 
     private func showButtons(_ buttons: [UIView]) {

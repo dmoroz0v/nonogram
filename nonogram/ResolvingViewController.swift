@@ -277,6 +277,10 @@ final class ResolvingViewController: UIViewController {
     private func switchLayer(with action: SwitchLayerAction) {
         switch action {
         case .selectLayer(let penColor):
+            if selectedLayerColor != nil {
+                switchLayer(with: .closeLayer)
+            }
+
             self.pen = .color(penColor)
 
             var layerField: Field
@@ -600,6 +604,10 @@ extension ResolvingViewController: ControlsPanelViewControllerDelegate {
 
     func controlsPanelViewControllerColors(_: ControlsPanelViewController) -> [Field.Color] {
         return field.colors
+    }
+
+    func controlsPanelViewControllerAllColors(_: ControlsPanelViewController) -> [Field.Color] {
+        return fullField.colors
     }
 
     func controlsPanelViewControllerDidTapExit(_: ControlsPanelViewController) {

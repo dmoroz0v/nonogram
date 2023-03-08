@@ -14,6 +14,7 @@ protocol ControlsPanelViewControllerDelegate: AnyObject {
     func controlsPanelViewController(_: ControlsPanelViewController, didSelectLayerColor: Field.Color)
     func controlsPanelViewControllerDidTapCloseLayer(_: ControlsPanelViewController)
     func controlsPanelViewControllerColors(_: ControlsPanelViewController) -> [Field.Color]
+    func controlsPanelViewControllerAllColors(_: ControlsPanelViewController) -> [Field.Color]
 }
 
 final class ControlsPanelViewController: UIViewController {
@@ -102,7 +103,7 @@ extension ControlsPanelViewController: ControlsPanelViewDelegate {
     func controlsPanelView(_: ControlsPanelView, didTapLayers layersView: UIView) {
         let popoverContentController = SelectPenViewController()
         self.popoverContentController = popoverContentController
-        let colors = delegate?.controlsPanelViewControllerColors(self) ?? []
+        let colors = delegate?.controlsPanelViewControllerAllColors(self) ?? []
         popoverContentController.pens = colors.map({ .color($0) })
         popoverContentController.modalPresentationStyle = .popover
         popoverContentController.didSelectPen = { [weak self] pen in
