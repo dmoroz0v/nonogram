@@ -7,34 +7,53 @@
 
 import UIKit
 
-final class RootViewController: UIViewController, ResolvingViewControllerDelegate, PagesViewControllerDelegate {
+final class RootViewController: UIViewController {
 
     private var currentViewController: UIViewController?
     private let crosswordLoader = CrosswordLoader()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
+    private let storage = Storage()
+    private lazy var pagesViewController = PagesViewController(storage: storage)
 
-    func pagesViewController( _: PagesViewController, didSelectItem item: ListItem, savedData: Storage.Data?) {
-        if let data = savedData {
-            let resolvingViewController = ResolvingViewController(
-                url: item.url,
-                thumbnailUrl: item.thumbnailUrl,
-                title: item.title,
-                fullField: data.fullField,
-                layers: data.layers,
-                selectedLayerColor: data.selectedLayerColor,
-                solution: data.solution,
-                showsErrors: data.showsErrors
-            )
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
-            resolvingViewController.delegate = self
+        pagesViewController.delegate = self
+        showVC(pagesViewController)
 
-            self.showVC(resolvingViewController)
-        } else {
-            loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
-        }
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.hidesWhenStopped = true
+        view.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ])
     }
 
-    func loadCrossword(url: URL, thumbnailUrl: URL, title: String) {
+    private func showVC(_ vc: UIViewController) {
+        if let currentViewController = currentViewController {
+            currentViewController.willMove(toParent: nil)
+            currentViewController.view.removeFromSuperview()
+            currentViewController.removeFromParent()
+        }
+
+        currentViewController = vc
+
+        addChild(vc)
+        vc.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(vc.view)
+
+        NSLayoutConstraint.activate([
+            vc.view.topAnchor.constraint(equalTo: view.topAnchor),
+            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+
+        vc.didMove(toParent: self)
+    }
+
+    private func loadCrossword(url: URL, thumbnailUrl: URL, title: String) {
         view.bringSubviewToFront(activityIndicator)
         activityIndicator.startAnimating()
         view.isUserInteractionEnabled = false
@@ -67,9 +86,32 @@ final class RootViewController: UIViewController, ResolvingViewControllerDelegat
             }
         }
     }
+}
 
-    private let storage = Storage()
+extension RootViewController: PagesViewControllerDelegate {
+    func pagesViewController( _: PagesViewController, didSelectItem item: ListItem, savedData: Storage.Data?) {
+        if let data = savedData {
+            let resolvingViewController = ResolvingViewController(
+                url: item.url,
+                thumbnailUrl: item.thumbnailUrl,
+                title: item.title,
+                fullField: data.fullField,
+                layers: data.layers,
+                selectedLayerColor: data.selectedLayerColor,
+                solution: data.solution,
+                showsErrors: data.showsErrors
+            )
 
+            resolvingViewController.delegate = self
+
+            self.showVC(resolvingViewController)
+        } else {
+            loadCrossword(url: item.url, thumbnailUrl: item.thumbnailUrl, title: item.title)
+        }
+    }
+}
+
+extension RootViewController: ResolvingViewControllerDelegate {
     func resolvingViewController(
         _ vc: ResolvingViewController,
         didChangeState fullField: Field,
@@ -95,46 +137,6 @@ final class RootViewController: UIViewController, ResolvingViewControllerDelegat
     }
 
     func resolvingViewControllerDidTapExit(_: ResolvingViewController) {
-        let pagesViewController = PagesViewController(storage: storage)
-        pagesViewController.delegate = self
         showVC(pagesViewController)
     }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        let pagesViewController = PagesViewController(storage: storage)
-        pagesViewController.delegate = self
-        showVC(pagesViewController)
-
-        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        activityIndicator.hidesWhenStopped = true
-        view.addSubview(activityIndicator)
-        NSLayoutConstraint.activate([
-            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-        ])
-    }
-
-    func showVC(_ vc: UIViewController) {
-        if let currentViewController = currentViewController {
-            currentViewController.willMove(toParent: nil)
-            currentViewController.view.removeFromSuperview()
-            currentViewController.removeFromParent()
-        }
-
-        currentViewController = vc
-
-        addChild(vc)
-        view.addSubview(vc.view)
-        vc.didMove(toParent: self)
-
-        NSLayoutConstraint.activate([
-            vc.view.topAnchor.constraint(equalTo: view.topAnchor),
-            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-        ])
-    }
-
 }
