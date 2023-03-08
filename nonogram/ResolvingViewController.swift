@@ -565,23 +565,31 @@ extension ResolvingViewController: LinesHunksViewDelegate {
         var n = 0
         for valueIndex in range {
             let value = line[valueIndex]
-            if value == nil {
+            var needsStop = false
+            switch value {
+            case .none:
+                needsStop = true
+            case .empty:
                 break
-            }
-            if value != .empty {
+            case .color(let color):
                 n += 1
-            }
-            if n != 0
-                && (valueIndex + 1 == line.count || valueIndex == 0 || line[valueIndex + increment] != value)
-                && hunkIndex >= 0 && hunkIndex < linesHunksView.linesHunks[hunksIndex].count
-            {
-                let lineHunks = linesHunksView.linesHunks[hunksIndex]
-                let hunk = lineHunks[hunkIndex]
-                if n == hunk.n {
-                    result.append(hunkIndex)
-                    n = 0
-                    hunkIndex += increment
+                if n != 0
+                    && (valueIndex + 1 == line.count || valueIndex == 0 || line[valueIndex + increment] != value)
+                    && hunkIndex >= 0 && hunkIndex < linesHunksView.linesHunks[hunksIndex].count
+                {
+                    let lineHunks = linesHunksView.linesHunks[hunksIndex]
+                    let hunk = lineHunks[hunkIndex]
+                    if n == hunk.n && hunk.color == color {
+                        result.append(hunkIndex)
+                        n = 0
+                        hunkIndex += increment
+                    } else {
+                        needsStop = true
+                    }
                 }
+            }
+            if needsStop {
+                break
             }
         }
         return result
