@@ -577,10 +577,7 @@ extension ResolvingViewController: LinesHunksViewDelegate {
                 break
             case .color(let color):
                 n += 1
-                if n != 0
-                    && (valueIndex + 1 == line.count || valueIndex == 0 || line[valueIndex + increment] != value)
-                    && hunkIndex >= 0 && hunkIndex < linesHunksView.linesHunks[hunksIndex].count
-                {
+                if (valueIndex == range.last || line[valueIndex + increment] != value) {
                     let lineHunks = linesHunksView.linesHunks[hunksIndex]
                     let hunk = lineHunks[hunkIndex]
                     if n == hunk.n && hunk.color == color {
@@ -592,7 +589,7 @@ extension ResolvingViewController: LinesHunksViewDelegate {
                     }
                 }
             }
-            if needsStop {
+            if needsStop || hunkIndex == -1 || hunkIndex == linesHunksView.linesHunks[hunksIndex].count {
                 break
             }
         }
